@@ -18,20 +18,17 @@ include_once('config.php');
 
 $request = $_REQUEST;
 
-if (isset($request['request_id'])) {
+if (isset($request)) {
  
-    //$payload = JWT::urlsafeB64Decode($request['base64Payload']);
-  
-   
-    $member = new Members();
-    //$secretKey = $member->getSecret($request['requestId']);
-    $secretKey = $request['request_id'];
-    //print_r($secretKey);
     $txtHeader = array();
     $txtHeader["alg"]="RS256";
-    $txtHeader["typ"]="JWT";//(',: ,"iss"="Selcom Transsnet","sub":"selcom@transsnet.net","aud":"https://transset.selcom.net", "exp":"24h"}');
+    $txtHeader["typ"]="JWT";
+    $txtHeader["iss"]="Selcom Transsnet";
+    $txtHeader["sub"]="selcom@transsnet.net";
+    $txtHeader["aud"]="https://transset.selcom.net";
+    $txtHeader["exp"]="24h";//(',: ,"iss"="Selcom Transsnet","sub":"selcom@transsnet.net","aud":"https://transset.selcom.net", "exp":"24h"}');
     $txtPayload = (json_decode(file_get_contents('php://input')));
-    
+   
     $privateKey = file_get_contents('./private.txt', true);
     //print_r($privateKey);
     $res = openssl_pkey_get_private($privateKey); 
