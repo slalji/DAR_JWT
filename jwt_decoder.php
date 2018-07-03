@@ -31,6 +31,6 @@ if (!empty($err) && $err!="" ){
 if ( Validate::verify($headers)) {
      
         $method = $body->method;
-        $response = $db->transaction($body,$method);
+        $response = $db->transaction($body->requestParams,$method);
         print_r($response);
 }
