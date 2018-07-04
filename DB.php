@@ -85,11 +85,11 @@ class DB extends PDO {
         
         switch($method){
             case 'openAccount': print_r( $transaction->OpenAccount($data)); break;
-            case 'updateAccount': $transaction->UpdateAccount($data); break;
+            case 'updateAccount': print_r($transaction->UpdateAccount($data)); break;
             case 'cashIn': $transaction->CashIn($data); break;
             case 'cashOut': $transaction->CashOut($data); break;
             case 'sendMoney': $transaction->SendMoney($data); break;
-            case 'nameLookup': $transaction->NameLookup($data); break;
+            case 'nameLookup': print_r($transaction->NameLookup($data)); break;
             case 'transactionLookup': $transaction->TransactionLookup($data); break;
             case 'biller': $transaction->Biller($data); break;
             case 'requestVCN': $transaction->RequestVCN($data); break;
