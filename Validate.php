@@ -1,6 +1,6 @@
 <?php
 require_once ("config.php");
-
+require_once ("DB.php");
 /**
  * Validates Selcom API Payload of 
  * {
@@ -8,7 +8,7 @@ require_once ("config.php");
 *	"method": "reserveAmount",
 *	"timestamp": "1529998743",
 *	"requestParams": {
-*		"transId": "580929745048",
+*		"transid": "580929745048",
 *		"String": "String",
 *		"String": "String",
 *		"String": "String",
@@ -26,9 +26,8 @@ require_once ("config.php");
  **/
 class Validate
 {
-
-    public static function valid($payload)
-    {
+    public static function valid($payload)    {
+        
         $err = array();
         if (!isset($payload->iss) || empty($payload->iss)) {
             $err[]='parameter issuer "iss" may not be empty';
@@ -45,13 +44,14 @@ class Validate
         if (!isset($payload->requestParams) || empty($payload->requestParams)) {
             $err[]='request paramaters may not be empty';
         }
-        if (!isset($payload->requestParams->transId) || empty($payload->requestParams->transId)) {
-            $err[]='transId request paramater may not be empty ';
+        if (!isset($payload->requestParams->transid) || empty($payload->requestParams->transid)) {
+            $err[]='transid request paramater may not be empty ';
         }
         $data = isset($err) ? $err :false;
     
         return ($err);
     }
+    
     public static function verify($headers){
         if (isset($headers['Authorization']) || isset($headers['authorization'])) {
     
@@ -108,6 +108,115 @@ class Validate
             echo ' Caught exception: ',  $e->getMessage(), "\n";
         }
         return false;
+    }
+    public static function check($acctNo){
+        $db = new DB();
+        $sql ="select id from accountProfile where accountNo='".$acctNo."'";
+        $stmt = $db->conn->prepare( $sql );                     
+        $stmt->execute();
+        if ($stmt->rowCount() > 0)
+            return true;
+        return false;
+        
+    }
+    public static function openAccount($payload){
+       
+        $err = array();
+        try{
+       
+            if (!isset($payload->transid) || empty($payload->transid)) {
+                $err[]='transid may not be empty';
+            }
+            if (!isset($payload->customerNo) || empty($payload->customerNo)) {
+                $err[]='customerNo may not be empty';
+            }
+            if (!isset($payload->firstName) || empty($payload->firstName )) {
+                $err[]='firstName may not be empty';
+            }
+            if (!isset($payload->lastName) || empty($payload->lastName )) {
+                $err[]='lastName may not be empty';
+            }
+            if (!isset($payload->msisdn) || empty($payload->msisdn)) {
+                $err[]='msisdn may not be empty';
+            }             
+            
+            $data = isset($err) ? $err :false;
+            $db = new DB();
+            $sql ="select id from accountProfile where customerNo='".$payload->customerNo."'";
+            $stmt = $db->conn->prepare( $sql );                     
+            $stmt->execute();
+            if ($stmt->rowCount() > 0){
+                $err[] ='Account already exists';
+            }
+        }
+        catch(Exception $e){
+            $err[]= $e->getMessage();
+        }
+        return ($err);
+    }
+    public static function updateAccount($payload) {
+        $err = array();
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            $err[]='accountNo may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        $data = isset($err) ? $err :false;
+    
+        return ($err);
+    }
+    public static function nameLookup($payload)
+    {
+        $err = array();
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            $err[]='accountNo may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        
+        $data = isset($err) ? $err :false;
+    
+        return ($err);
+    }
+    public static function transactionLookup($payload){
+        $err = array();
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            $err[]='accountNo may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        if (!isset($payload->transRef) || empty($payload->transRef)) {
+            $err[]='transRef may not be empty. transRef is the transaction id you would like to lookup, where as transid is this current transaction';
+        }
+        $data = isset($err) ? $err :false;
+    
+        return ($err);
+    }
+    public static function transferFunds($payload)    {
+        $err = array();
+        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
+            $err[]='accountNo may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }        
+        if (!isset($payload->toAccountNo) || empty($payload->toAccountNo)) {
+            $err[]='toAccountNo may not be empty';
+        }
+        if (!isset($payload->amount) || empty($payload->amount)) {
+            $err[]='amount may not be empty';
+        }
+        if (!isset($payload->currency) || empty($payload->currency)) {
+            $err[]='currency may not be empty';
+        }
+        
+        
+        $data = isset($err) ? $err :false;
+    
+        return ($err);
     }
 
 

@@ -16,21 +16,27 @@ $body = (json_decode(file_get_contents('php://input')));
 
 //capture request to DB
 $db = new DB();
+if ($body){
+        //Log Request
+        $result = $db->incoming($body);
 
-//Log Request
-$result = $db->incoming($body);
+        //Check for Duplicate (if transId exists: reject)
 
-//Check for Duplicate (if transId exists: reject)
-
-$err = Validate::valid($body);
-if (!empty($err) && $err!="" ){
-    echo ('err:'.$err);
-   return false;
+        $err = Validate::valid($body);
+        if (!empty($err) && $err!="" ){
+        echo ('err:'.json_encode($err));
+        return false;
+        }
+        //Verify Signature against client Public Key
+        if ( Validate::verify($headers)) {
+        
+                $method = $body->method;
+                $response = $db->transaction($body->requestParams,$method);
+                print_r($response);
+        }
 }
-//Verify Signature against client Public Key
-if ( Validate::verify($headers)) {
-     
-        $method = $body->method;
-        $response = $db->transaction($body->requestParams,$method);
-        print_r($response);
+else{
+        print_r('invalid json format');
 }
+        
+

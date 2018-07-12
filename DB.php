@@ -11,7 +11,8 @@ require_once ("Transactions.php");
  
 class DB extends PDO {
 
-    private $conn =null;
+    public $conn =null;
+    private static $objInstance; 
    
 
     public function __construct() {
@@ -30,8 +31,30 @@ class DB extends PDO {
 
 
     }
-    //mysql_query("INSERT INTO incoming(sender,keyword,message) VALUES('$sender','$prefix','$sms')");
-    private function getKeyValuePair($obj){
+    public static function getInstance() {
+        if(!self::$objInstance){ 
+            date_default_timezone_set('Africa/Dar_es_Salaam');
+            $dsn = 'mysql:dbname=' . DB_NAME . ';host=' . DB_HOST;
+            $user = DB_USER;
+            $pw = DB_PASS;
+            try {
+                self::$objInstance = new PDO( DB_DSN, DB_USER, DB_PASS ); 
+                self::$objInstance->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+                return self::$objInstance;
+            }
+            catch(PDOException $e) {
+                echo 'Connection failed: ' . $e->getMessage();;
+            }
+        }
+        return self::$objInstance; 
+
+
+    }
+    public static function getToken($length)
+    {
+        return substr(str_shuffle(implode("", (array_merge(range(0, 25))))), 0, $length);
+    }
+   /* private function getKeyValuePair($obj){
     
         $str="{";
         foreach ($obj as $key => $value){
@@ -53,29 +76,61 @@ class DB extends PDO {
             }
             return $params .="}";
     }
+    */
+    public static function toDateTime($dt){
+        if( $dt == date('Y-m-d H:i:s',strtotime($dt)) ){
+            // date is in fact in one of the above formats
+            return $dt;
+        }
+        else
+        {
+            // date is something else.
+           return date('Y-m-d H:i:s',$dt);
+        }
+    }
+    public static function toDate($dt){
+        if( $dt == date('Y-m-d',strtotime($dt)) ){
+            // date is in fact in one of the above formats
+            return $dt;
+        }
+        else
+        {
+            // date is something else.
+           return date('Y-m-d',$dt);
+        }
+    }
+    public static function getErrorResponse($data, $err, $ref){
+            $message = array();
+            $message['status']="Internal Server Error";
+            //$message['method']="openAccount";
+            $message['data']=$err;
+            $respArray = ['transId'=>$data->transId,'reference'=>$ref,'responseCode' => 500, "Message"=>($message)];
+
+           return json_encode($respArray); 
+    }
     public function incoming($data) {
        
         try{
-            $params = $this->toString($data);
+           // $params = $this->toString($data);
+            $params = json_encode((array)$data);
+            $paramdatetime = $this->toDateTime($data->timestamp);           
 
-            $paramdatetime = date('Y-m-d H:i:s',$data->timestamp);
-            $sql= 'INSERT INTO incoming (fulltimestamp, paramtimestamp, method, transId,payload) 
-                VALUES (now(), :paramtimestamp, :method, :transId, :payload)';
+            //date('Y-m-d H:i:s',$data->timestamp);
+            $sql= 'INSERT INTO incoming (fulltimestamp, paramtimestamp, method, transid,payload) 
+                VALUES (now(), :paramtimestamp, :method, :transid, :payload)';
             $stmt = $this->conn->prepare( $sql );
             $stmt->bindValue( "paramtimestamp", $paramdatetime, PDO::PARAM_STR );            
             $stmt->bindValue( "method", $data->method, PDO::PARAM_STR );
-            $stmt->bindValue( "transId", $data->requestParams->transId, PDO::PARAM_STR );
+            $stmt->bindValue( "transid", $data->requestParams->transid, PDO::PARAM_STR );
             $stmt->bindValue( "payload", $params , PDO::PARAM_STR);
             $stmt->execute();
-            //return $stmt->fetch(PDO::FETCH_ASSOC);
-            //$stmt->commit(); 
-            //return $stmt->lastInsertId(); 
+            return true; 
         }
         catch(PDOExecption $e) { 
             //$stmt->rollback(); 
             print "Error!: " . $e->getMessage() . $sql."</br>".$data;            
         } 
-        catch( PDOExecption $e ) { 
+        catch(Execption $e ) { 
             print "Error!: " . $e->getMessage() . $sql. "</br>".$data; 
         } 
         return false;
@@ -86,23 +141,23 @@ class DB extends PDO {
         switch($method){
             case 'openAccount': print_r( $transaction->OpenAccount($data)); break;
             case 'updateAccount': print_r($transaction->UpdateAccount($data)); break;
-            case 'cashIn': $transaction->CashIn($data); break;
-            case 'cashOut': $transaction->CashOut($data); break;
-            case 'sendMoney': $transaction->SendMoney($data); break;
-            case 'nameLookup': print_r($transaction->NameLookup($data)); break;
-            case 'transactionLookup': $transaction->TransactionLookup($data); break;
-            case 'biller': $transaction->Biller($data); break;
-            case 'requestVCN': $transaction->RequestVCN($data); break;
-            case 'linkVCNAccount': $transaction->LinkVCNAccount($data); break;
-            case 'disburseLoan': $transaction->DisburseLoan($data); break;
-            case 'suspenseAccount': $transaction->SuspenseAccount($data); break;
-            case 'closeAccount': $transaction->CloseAccount($data); break;
-            case 'activateAccount': $transaction->ActivateAccount($data); break;
-            case 'reversal': $transaction->Reversal($data); break;
-            case 'exGratiaPayments': $transaction->ExGratiaPayments($data); break;
-            case 'BE': $transaction->BE($data); break;
-            case 'MS': $transaction->MS($data); break;
-            default: print_r('no method found: '.$method);
+            case 'addCash': print_r( $transaction->cashin($data)); break;
+            case 'cashOut': print_r( $transaction->CashOut($data)); break;
+            case 'fundTransfer': print_r( $transaction->transferFunds($data)); break;
+            case 'nameLookup': print_r( print_r($transaction->NameLookup($data))); break;
+            case 'transactionLookup': print_r( print_r($transaction->TransactionLookup($data))); break;
+            case 'biller': print_r( $transaction->Biller($data)); break;
+            case 'requestVCN': print_r( $transaction->RequestVCN($data)); break;
+            case 'linkVCNAccount': print_r( $transaction->LinkVCNAccount($data)); break;
+            case 'disburseLoan': print_r( $transaction->DisburseLoan($data)); break;
+            case 'suspenseAccount': print_r( $transaction->SuspenseAccount($data)); break;
+            case 'closeAccount': print_r( $transaction->CloseAccount($data)); break;
+            case 'activateAccount': print_r( $transaction->ActivateAccount($data)); break;
+            case 'reversal': print_r( $transaction->Reversal($data)); break;
+            case 'exGratiaPayments': print_r( $transaction->ExGratiaPayments($data)); break;
+            case 'BE': print_r( $transaction->BE($data)); break;
+            case 'MS': print_r( $transaction->MS($data)); break;
+            default: print_r('invalid command method found: '.$method);
             
         }
 

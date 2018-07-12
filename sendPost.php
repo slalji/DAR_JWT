@@ -4,7 +4,7 @@ $payload = '{
 	"method": "openAccount",
 	"requestParams": {
 		"transId": "580929745048",
-		"accountNo": "567567556002",
+		"customerNo": "567567556002",
 		"msisdn": "255686400149",
 		"amount": "100000",
 		"period":"1272509157",
