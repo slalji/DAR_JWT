@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jul 03, 2018 at 02:31 PM
+-- Generation Time: Jul 12, 2018 at 02:54 PM
 -- Server version: 5.7.19
 -- PHP Version: 5.6.31
 
@@ -25,28 +25,39 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `account`
+-- Table structure for table `accountprofile`
 --
 
-DROP TABLE IF EXISTS `account`;
-CREATE TABLE IF NOT EXISTS `account` (
+DROP TABLE IF EXISTS `accountprofile`;
+CREATE TABLE IF NOT EXISTS `accountprofile` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `card` varchar(16) NOT NULL,
   `firstName` varchar(60) NOT NULL,
   `lastName` varchar(60) NOT NULL,
-  `accountNo` varchar(100) NOT NULL,
+  `gender` varchar(10) DEFAULT NULL,
+  `customerNo` varchar(100) NOT NULL,
+  `accountNo` varchar(60) NOT NULL,
   `msisdn` varchar(12) NOT NULL,
-  `email` varchar(100) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
   `status` varchar(1) NOT NULL DEFAULT '0',
-  `addressLine1` varchar(60) NOT NULL,
-  `addressCity` varchar(60) NOT NULL,
-  `addressCountry` varchar(60) NOT NULL,
+  `addressLine1` varchar(60) DEFAULT NULL,
+  `addressCity` varchar(60) DEFAULT NULL,
+  `addressCountry` varchar(60) NOT NULL DEFAULT 'Tanzania',
   `dob` date NOT NULL,
-  `currancy` varchar(5) NOT NULL,
+  `currency` varchar(5) NOT NULL DEFAULT 'TZS',
   `state` varchar(5) NOT NULL DEFAULT 'ON',
   `active` varchar(1) NOT NULL DEFAULT '0',
+  `nationality` varchar(60) DEFAULT NULL,
+  `balance` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `accountprofile`
+--
+
+INSERT INTO `accountprofile` (`id`, `firstName`, `lastName`, `gender`, `customerNo`, `accountNo`, `msisdn`, `email`, `status`, `addressLine1`, `addressCity`, `addressCountry`, `dob`, `currency`, `state`, `active`, `nationality`, `balance`) VALUES
+(1, 'John', 'Doe', '', '255789654555', '', '255789654555', '', '1', '', 'Dar', '', '1978-06-15', 'TZS', 'ON', '0', '', 0),
+(2, 'Salma', 'Kanji Lalji', '', '255789654700', '', '255789654700', '', '1', '', 'Mbeya', '', '1997-01-10', 'TZS', 'ON', '0', '', 0);
 
 -- --------------------------------------------------------
 
@@ -130,7 +141,15 @@ CREATE TABLE IF NOT EXISTS `card` (
   KEY `fuel_any_vehicle` (`fuel_any_vehicle`),
   KEY `veh_reg_num` (`veh_reg_num`),
   KEY `pan` (`pan`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `card`
+--
+
+INSERT INTO `card` (`id`, `name`, `msisdn`, `uid`, `card`, `status`, `fulltimestamp`, `registeredby`, `confirmedby`, `registertimestamp`, `confirmtimestamp`, `pin`, `failcount`, `imsi`, `balance`, `bonus`, `loyalty`, `alert`, `obal`, `cbal`, `dealer`, `last_transaction`, `reference`, `language`, `fuel_scheme`, `fuel_scheme_name`, `fuel_balance`, `state`, `dailytrans`, `active`, `email`, `stolen`, `initial`, `holdinglimit`, `dailylimit`, `tier`, `comments`, `suspense`, `fuel_last_transaction`, `fuel_client`, `fuel_reference`, `fuel_obal`, `fuel_cbal`, `phone`, `ussd`, `fuel_lube`, `fuel_bill_pay`, `fuel_any_vehicle`, `veh_reg_num`, `type`, `master`, `pan`, `fuel_bonus`, `fuel_bonus_avail`) VALUES
+(9, 'John Doe', '255789654555', '-', '', '1', '2018-07-12 15:56:59', 'SelcomTranssetAPI', 'SelcomTranssetAPI', '2018-07-12 15:56:59', '2018-07-12 15:56:59', '1234', 0, '-', '0', '0', '0', '1', '0', '0', 'Selcom', NULL, '176221524112', 'SWA', '0', '-', '0', 'ON', '0', '1', '', '0', '0', '5000000', '5000000', 'A', '-', '0', NULL, '-', '-', '0', '0', '', '1', '0', '0', '1', '-', 'PRIMARY', '-', '-', '0', '0'),
+(10, 'Salma Kanji Lalji', '255789654700', '-', '', '1', '2018-07-12 15:59:16', 'SelcomTranssetAPI', 'SelcomTranssetAPI', '2018-07-12 15:59:16', '2018-07-12 15:59:16', '1234', 0, '-', '0', '0', '0', '1', '0', '0', 'Selcom', NULL, '213118272100', 'SWA', '0', '-', '0', 'ON', '0', '1', '', '0', '0', '5000000', '5000000', 'A', '-', '0', NULL, '-', '-', '0', '0', '', '1', '0', '0', '1', '-', 'PRIMARY', '-', '-', '0', '0');
 
 -- --------------------------------------------------------
 
@@ -144,7 +163,7 @@ CREATE TABLE IF NOT EXISTS `incoming` (
   `fulltimestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `paramtimestamp` timestamp NOT NULL,
   `method` varchar(60) NOT NULL,
-  `transId` varchar(60) NOT NULL,
+  `transid` varchar(60) NOT NULL,
   `payload` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
@@ -242,7 +261,14 @@ CREATE TABLE IF NOT EXISTS `transaction` (
   KEY `utilityref` (`utilityref`),
   KEY `dealer` (`dealer`),
   KEY `fuel_type` (`fuel_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `transaction`
+--
+
+INSERT INTO `transaction` (`id`, `fulltimestamp`, `transid`, `reference`, `vendor`, `card`, `msisdn`, `amount`, `result`, `message`, `obal`, `cbal`, `charge`, `name`, `type`, `comments`, `status`, `initiated`, `completed`, `initiate_ts`, `complete_ts`, `channel`, `utilitycode`, `utilityref`, `dealer`, `narration`, `fuel_type`, `fuel_rate`, `fuel_volume`, `fuel_bonus`) VALUES
+(39, '2018-07-12 16:43:36', '01052018161000', '495160143122', 'TRANSSNET', 'XXXX XXXX XXXX ', '255789654700', '10', '051', 'Insufficient funds', '0', '0', '0', 'Salma Kanji Lalji', 'DEBIT', '-', '0', '-', '-', '2018-07-12 16:43:36', '2018-07-12 16:43:36', 'APP', 'P2P', '255789654555', 'Selcom', '-', '-', '0', '0', '0');
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
