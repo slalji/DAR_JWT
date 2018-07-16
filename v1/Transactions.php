@@ -16,11 +16,24 @@ class Transactions
     private $conn =null;
 
     public function __construct() {
-        $this->reference = DB::getToken(12);
-       
+        $this->reference = DB::getToken(12);//rand(100000000000,999999999999);
+       /* date_default_timezone_set('Africa/Dar_es_Salaam');
+        $dsn = 'mysql:dbname=' . DB_NAME . ';host=' . DB_HOST;
+        $user = DB_USER;
+        $pw = DB_PASS;
+        try {
+            $this->conn = new PDO( DB_DSN, DB_USER, DB_PASS ); 
+            $this->conn->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+            return $this->conn;
+        }
+        catch(PDOException $e) {
+            echo 'Connection failed: ' . $e->getMessage();;
+        }
+        */
         $this->conn = DB::getInstance();
     }
     public function _pdoBindArray(&$poStatement, &$paArray){
+       
        
         foreach ($paArray as $k=>$v){
               
@@ -31,12 +44,8 @@ class Transactions
         return $poStatement;
       }
     public function _updateAccountProfile($data){
-
         $payload = (array)$data;
         $arr = null;
-        $customer = $this->_getAccountNo($data['customerNo']);
-        //die($customer.' : '.$data['customerNo']);
-        $transid=$data['transid'];
         unset($payload['transid']);
         unset($payload['customerNo']);
         try{
@@ -48,22 +57,19 @@ class Transactions
            
             $arr = rtrim($arr,', ');
            
-             
-            $sql ="UPDATE accountprofile SET $arr where accountNo = '".$customer."'";
-                        
-            $stmt = $this->conn->prepare( $sql );
-            $state = $this->_pdoBindArray($stmt,$payload);             
-            $state->execute();            
-            return  $customer;
+              
+            $sql ="UPDATE accountprofile SET $arr where customerNo = '".$data->customerNo."'";
            
-
+            $stmt = $this->conn->prepare( $sql );
+            $state = $this->_pdoBindArray($stmt,$payload);            
+            $state->execute();
         }catch (Exception $e) {
             
             $message = array();
             $message['status']="ERROR";
             $message['method']='Transaction error at: updateAccount '.$e->getMessage()." : ".$sql;
             
-            $respArray = ['transid'=>$data['transid'],$this->reference,'responseCode' => 501, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
     }
     public function _addAccountProfile($data){
@@ -109,43 +115,15 @@ class Transactions
            
             $message = array();
             $message['status']="ERROR";
-            $message['message']='Transaction error at: _addAccountProfile '.$e->getMessage()." : ".$sql;
+            $message['message']='Transaction error at: addaccountProfile '.$e->getMessage()." : ".$sql;
             
-            $error = 'Transaction error at: _addAccountProfile '.$e->getMessage();
+            $error = 'Transaction error at: addaccountProfile '.$e->getMessage();
             throw new Exception($error);
         }
-        $error = 'Transaction error at: _addAccountProfile ';//.$e->getMessage();
+        $error = 'Transaction error at: addaccountProfile ';//.$e->getMessage();
         //throw new Exception($error);
         return false;
         
-    }
-    public function _getAccountNo($customerNo){
-        
-        $sql ="select accountNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
-
-        $stmt = $this->conn->prepare( $sql );
-        $stmt->execute();            
-        $result = $stmt->fetchColumn();
-        return $result;           
-           
-    }
-    public function _getProfile($accountNo){
-        
-        $sql ="select * from accountProfile where accountNo ='$accountNo' ";  
-
-        $stmt = $this->conn->prepare( $sql );
-        $stmt->execute();            
-        $result = $stmt->fetchAll( PDO::FETCH_ASSOC );
-        return json_encode($result);
-           
-    }
-    public function _setResponse($method){
-        $arr = array();
-        $arr['reference']=$this->reference;
-        $arr['fulltimestamp'] = date('Y-m-d H:i:s');
-        //$arr['transid'] = $data->transid;
-        $arr['message'] = $method;
-        return $arr;
     }
     public function _addCard($data)   {
         //die(print_r('here'));
@@ -350,18 +328,30 @@ class Transactions
         //check for required fields eg accountNo, transid, fname lname
         //Validate::openAccount($data);
         $payload = (array)$data;
-       
+        
         //update accountProfile DB
-        $customer = $this->_updateAccountProfile($payload);
-        $payload['accountNo']=$customer;
+        $this->_updateAccountProfile($data);
            
 
-            $payload['reference']=$this->reference;
+            $payload['reference']=$this->reference;//rand(10000000000,9999999999);
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
             //$payload['transid'] = $data->transid;
             $payload['method'] = 'updateAccount';
             unset($payload['transid']) ;
-        
+            //add to card DB updateCard ?
+            //$this->updateCard($payload);
+            
+
+            //add to transactions DB
+           /* $this->addTransaction($payload);
+            $resdata = $payload;
+            unset($resdata['reference']);
+            unset($resdata['fulltimestamp']);
+            unset($resdata['transid']);
+            $message = array();
+            $message['status']="SUCCESS";
+            $message['data']=$resdata;
+        */
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="updateAccount";
@@ -373,23 +363,33 @@ class Transactions
 
     public function nameLookup($data)   {
         //check for required fields eg transid return accountprofile info of this transid 
-        
-        $err = Validate::nameLookup($data);
-        if (!empty($err))
-            return DB::getErrorResponse($data, $err, $this->reference);
+        //Validate::nameLookup($data);
+        //add to transaction
+        //update table card balance =+ amount
         $payload = (array)$data;    
-        $response = $this->_setResponse('nameLookup');
-       
+        
+        $arr = null;
+        //select * from accountprofile join transaction on accountprofile.card = transaction.card where transid = 'TPAY01052018161000'
         try{
-            
-            $where = 'where ';             
-            $where .= isset($payload['customerNo'])?'customerNo='.$payload['customerNo']:'msisdn='.$payload['msisdn'];
-            $sql ="select firstName, lastName, email, msisdn, accountNo, customerNo, addressLine1, addressCity, addressCountry, dob, currency, gender, nationality from accountprofile ".$where;
-
+             
+            $sql ="select firstName, lastName, email, msisdn, accountNo, customerNo, addressLine1, addressCity, addressCountry, dob, currency, gender, nationality from accountprofile where customerNo ='".$data->customerNo."'";
+           
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);            
-            $state->execute();            
-          
+            $state->execute();
+
+
+            $payload['reference']=$this->reference;//DB::getToken(19);//rand(10000000000,9999999999);
+           
+            $payload['fulltimestamp'] = date('Y-m-d H:i:s');
+            $payload['transid'] = $data->transid;
+            $payload['message'] = 'nameLookup';
+            //add to card DB updateCard ?
+            //$this->updateCard($payload);
+            
+
+            //add to transactions DB
+            //$this->_addTransaction($payload); no money movement therefore nothing to trans table
             $result = $state->fetchAll(PDO::FETCH_ASSOC);
             $json = json_encode($result);
             
@@ -397,19 +397,16 @@ class Transactions
             $message['status']="SUCCESS";
             $message['method']="nameLookup";
             $message['data']=$result;
-            if (empty($result)){
-                $error="account does not exist";
-                throw new Exception($error);
-            }
-            $respArray = ['transid'=>$data->transid,'reference'=>$response['reference'],'responseCode' => 200, "Message"=>($message)];
+        
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
         }
         catch (Exception $e) {
             
             $message = array();
             $message['status']="ERROR";
-            $message['method']='Transaction error at: nameLookup '.$e->getMessage()." : ";//.$sql;
+            $message['method']='Transaction error at: nameLookup '.$e->getMessage()." : ".$sql;
             
-            $respArray = ['transid'=>$data->transid,'reference'=>$response['reference'],'responseCode' => 501, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
         }
         return (json_encode($respArray));
     }
@@ -420,7 +417,7 @@ class Transactions
         //update table card balance =+ amount
         $payload = (array)$data;    
        
-       
+        $arr = null;
         //select * from accountprofile join transaction on accountprofile.card = transaction.card where transid = 'TPAY01052018161000'
         try{
              /*transRef is the needle transid */
@@ -444,10 +441,7 @@ class Transactions
 
             $result = $state->fetchAll(PDO::FETCH_ASSOC);
             $json = json_encode($result);
-            if (empty($result)){
-                $error="transaction does not exist";
-                throw new Exception($error);
-            }
+           
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="transactionLookup";
@@ -459,7 +453,7 @@ class Transactions
             
             $message = array();
             $message['status']="ERROR";
-            $message['method']='Transaction error at: transactionLookup '.$e->getMessage()." : ";//.$sql;
+            $message['method']='Transaction error at: transactionLookup '.$e->getMessage()." : ".$sql;
             
             $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
         }
@@ -467,14 +461,17 @@ class Transactions
     }
     public function transferFunds($data)   {
         //check for required fields eg transid return accountprofile info of this transid 
-        $err = Validate::transferFunds($data);
-        if (!empty($err))
-            return DB::getErrorResponse($data, $err, $this->reference);        
+        Validate::transferFunds($data);
+        //add to transaction
+        //update table card balance =+ amount
         $payload = (array)$data;    
-        
-        try{             
+       
+        $arr = null;
+        //select * from accountprofile join transaction on accountprofile.card = transaction.card where transid = 'TPAY01052018161000'
+        try{
+             
            
-            $payload['reference']=$this->reference;
+            $payload['reference']=$this->reference;//DB::getToken(19);//rand(10000000000,9999999999);
             $payload['utilityref'] = $payload['toAccountNo'];
             unset($payload['toAccountNo']);
             unset($payload['currency']);
@@ -485,18 +482,42 @@ class Transactions
             //add to card DB updateCard ?
             //$this->updateCard($payload);          
 
-                    
-                        
-            $selcom = new DbHandler();
-            $result = $selcom->p2p($payload['transid'],$payload['reference'],$payload['utilityref'], $payload['msisdn'],$payload['amount']);
+           
+            
+           $selcom = new DbHandler();
+           $result = $selcom->p2p($payload['transid'],$payload['reference'],$payload['utilityref'], $payload['msisdn'],$payload['amount']);
+            //add to transactions DB do not add to trans db till function performed eg transferFunds
+           //$this->_addTransaction($payload);
+           /*if ($result['resultcode'] == '056'){
+               //card not found, send voucher code instead
+           }               
+           else{*/
 
+            $message = array();
+            $message['status']="ERROR";
+            $message['method']="transferFunds";
+            $message['data']=$result;
+        
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 500, "Message"=>($message)];
+            
+                //die( json_encode($result));;
+            /*$sql ="select fulltimestamp, msisdn, amount, message, comments, status, channel from transaction where transid = '".$data->transid."'";
+          
+            $stmt = $this->conn->prepare( $sql );
+            $state = $this->_pdoBindArray($stmt,$payload);            
+            $state->execute();            
+            
+            $result = $state->fetchAll(PDO::FETCH_ASSOC);
+            
+           
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="transferFunds";
             $message['data']=$result;
-
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
         
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+            */
+           //}
         }
         catch (Exception $e) {
             
@@ -507,190 +528,6 @@ class Transactions
             $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
         }
         return (json_encode($respArray));
-    }
-    public function checkBalance($data)   {
-        //check for required fields eg transid return accountprofile info of this transid 
-        $err = Validate::enquiry($data);
-        if (!empty($err))
-            return DB::getErrorResponse($data, $err, $this->reference);        
-        $payload = (array)$data;    
-        
-        try{             
-           
-            $payload['reference']=$this->reference;
-            $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
-            unset($payload['transid']);
-            $payload['fulltimestamp'] = date('Y-m-d H:i:s');
-            $payload['transid'] = $data->transid;
-            $payload['message'] = 'checkBalance';
-            //add to card DB updateCard ?
-            //$this->updateCard($payload);          
-
-                    
-                        
-            $selcom = new DbHandler();
-            $result = $selcom->balanceEnquiry($account);
-            foreach ($result as $key => $val){
-                $payload[$key]=$val;
-            }
-            
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="checkBalance";
-            $message['data']=$payload;
-
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
-        
-        }
-        catch (Exception $e) {
-            
-            $message = array();
-            $message['status']="ERROR";
-            $message['method']='Transaction error at: checkBalance '.$e->getMessage()." : ".$sql;
-            
-            $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
-        }
-        return (json_encode($respArray));
-    }
-    public function getStatement($data)   {
-        //check for required fields eg transid return accountprofile info of this transid 
-        $err = Validate::enquiry($data);
-        if (!empty($err))
-            return DB::getErrorResponse($data, $err, $this->reference);        
-        $payload = (array)$data;    
-        
-        try{             
-           
-            $payload['reference']=$this->reference;
-            $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
-            $days = isset($payload['days'])?$payload['days']:3;
-            unset($payload['transid']);
-            $payload['fulltimestamp'] = date('Y-m-d H:i:s');
-            $payload['transid'] = $data->transid;
-            $payload['message'] = 'getStatement';
-            //add to card DB updateCard ?
-            //$this->updateCard($payload);          
-
-                    
-                        
-            $selcom = new DbHandler();
-            $result = $selcom->statementEnquiry($account,$days);
-           
-            foreach ($result as $key => $val){
-                $payload[$key]=$val;
-            }
-            
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="getStatement";
-            $message['data']=$payload;
-
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
-        
-        }
-        catch (Exception $e) {
-            
-            $message = array();
-            $message['status']="ERROR";
-            $message['method']='Transaction error at: getStatement '.$e->getMessage()." : ".$sql;
-            
-            $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
-        }
-        return (json_encode($respArray));
-    }
-    public function updateAccountStatus($data){
-        //check for required fields eg transid return accountprofile info of this transid 
-       $err = Validate::accountState($data);
-        if (!empty($err))
-            return DB::getErrorResponse($data, $err, $this->reference);        
-        $payload = (array)$data; 
-         
-                 
-        $payload = (array)$data;
-        $payload['reference']=$this->reference;  
-        $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
-        $customer = $this->_getAccountNo($account);
-        $active = isset($payload['status']) && $payload['status'] === 'open'?'0':'1';
-        $payload['accountNo']=$customer;
-        unset( $payload['transid']);
-                   
-        try{
-            $sql = "UPDATE card SET active='".$active."' where id='".$customer."'; ";
-            $sql2 =" UPDATE accountprofile SET active='".$active."' where accountNo='".$customer."'";
-            
-            $stmt = $this->conn->query($sql);
-            $stmt = $this->conn->query($sql2);
-
-            //$result = $this->_getProfile($customer);
-           
-
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="getStatement";
-            $message['data']=$payload;
-
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
-        
-           
-
-        }catch (Exception $e) {
-            
-            $message = array();
-            $message['status']="ERROR";
-            $message['method']='Transaction error at: updateAccountStatus '.$e->getMessage()." : ".$sql;
-            
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-        }
-        return json_encode($respArray);
-    }
-    public function requestCard($data){
-        //check for required fields eg transid return accountprofile info of this transid 
-       /*$err = Validate::accountState($data);
-        if (!empty($err))
-            return DB::getErrorResponse($data, $err, $this->reference);        
-        $payload = (array)$data; 
-        */ 
-                 
-        $payload = (array)$data;
-        $payload['reference']=$this->reference;  
-        $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
-        $customer = $this->_getAccountNo($account);
-        $profile = json_decode($this->_getProfile($customer), true);
-        $msisdn = $profile[0]['msisdn'];
-        $name =  $profile[0]['firstName'].' '. $profile[0]['lastName'];
-        
-      
-        $card = "NA";
-        $pin = '1234';
-        $confirmPin = '1234';
-
-        $payload['accountNo']=$customer;
-        unset( $payload['transid']);
-                   
-        try{
-           
-            $selcom = new DbHandler();
-            $result = $selcom->activateCard($card,$msisdn,$name,$pin,$confirmPin);
-           
-
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="requestCard";
-            $message['data']=$result;
-
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
-        
-           
-
-        }catch (Exception $e) {
-            
-            $message = array();
-            $message['status']="ERROR";
-            $message['method']='Transaction error at: requestCard '.$e->getMessage()." : ".$sql;
-            
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-        }
-        return json_encode($respArray);
     }
 
 }

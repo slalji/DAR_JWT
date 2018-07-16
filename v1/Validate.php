@@ -119,21 +119,6 @@ class Validate
         return false;
         
     }
-    public static function checkTransid($transid){
-       
-        $data = isset($err) ? $err :false;
-            $db = new DB();
-            $sql ="select id, transid  from incoming where transid='".$transid."'";
-            $stmt = $db->conn->prepare( $sql );                     
-            $stmt->execute();
-            $result = $stmt->fetchAll();
-            if ($stmt->rowCount() > 1){
-               return true;
-            }
-            else
-                return false;
-        
-    }
     public static function openAccount($payload){
        
         $err = array();
@@ -177,23 +162,20 @@ class Validate
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-       
         $data = isset($err) ? $err :false;
     
         return ($err);
     }
-    public static function nameLookup($payload) {
+    public static function nameLookup($payload)
+    {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='customerNo or msisdn may not be empty';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-        if(checkTransid($payload)){
-            $err[]='duplicate transaction';
-        }
+        
         $data = isset($err) ? $err :false;
     
         return ($err);
@@ -209,7 +191,6 @@ class Validate
         if (!isset($payload->transRef) || empty($payload->transRef)) {
             $err[]='transRef may not be empty. transRef is the transaction id you would like to lookup, where as transid is this current transaction';
         }
-        
         $data = isset($err) ? $err :false;
     
         return ($err);
@@ -217,7 +198,7 @@ class Validate
     public static function transferFunds($payload)    {
         $err = array();
         if (!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='msisdn may not be empty';
+            $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -231,49 +212,12 @@ class Validate
         if (!isset($payload->currency) || empty($payload->currency)) {
             $err[]='currency may not be empty';
         }
-      
         
         
         $data = isset($err) ? $err :false;
     
         return ($err);
     }
-    public static function enquiry($payload) {
-        $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='customerNo or msisdn may not be empty';
-        }
-        if (!isset($payload->transid) || empty($payload->transid)) {
-            $err[]='transid may not be empty';
-        }
-        if(self::checkTransid($payload->transid)){
-            $err[]='duplicate transaction';
-        }
-        $data = isset($err) ? $err :false;
-    
-        return ($err);
-    }
-    public static function accountState($payload) {
-        $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='customerNo or msisdn may not be empty';
-        }
-        if (!isset($payload->status) || empty($payload->status)) {
-            $err[]='status may not be empty';
-        }
-        if (!isset($payload->transid) || empty($payload->transid)) {
-            $err[]='transid may not be empty';
-        }
-        if(self::checkTransid($payload->transid)){
-            $err[]='duplicate transaction';
-        }
-        $data = isset($err) ? $err :false;
-    
-        return ($err);
-    }
-    
 
 
 }

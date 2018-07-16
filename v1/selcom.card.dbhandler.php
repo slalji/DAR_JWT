@@ -365,7 +365,6 @@ class DbHandler{
 
 
 			$resp = $this->_get_card_info($msisdn);
-			die(print_r($resp));
 			if($resp['resultcode']=="000"){
 				$info = $resp['info'];
 				if($info['status']=="0"){
@@ -388,17 +387,13 @@ class DbHandler{
 					$response['result']="Verification code sent your number";
 
 					send_sms($msisdn,$msg);
-				}else if ($info['status']=="1" && $info['card']=''){
-					$response["resultcode"] = "1005";
-					$response["result"] = "Failed. Phone number is active but no card, TPay";
-				}
-				else {
+				}else{
 					$response["resultcode"] = "1004";
 					$response["result"] = "Failed. Phone number is active";
 				}
 			}else{
 				if($apppin==$confirmpin){
-					$query = "INSERT INTO  card(name, msisdn, active , fulltimestamp, registeredby, registertimestamp, pin ) VALUES ('$appname', '$msisdn', '0', NOW(), 'SYSTEM', NOW(), '$apppin' )";
+					$query = "INSERT INTO card.card(name, msisdn, active , fulltimestamp, registeredby, registertimestamp, pin ) VALUES ('$appname', '$msisdn', '0', NOW(), 'SYSTEM', NOW(), '$apppin' )";
 
 					$this->pdo_db->exec($query);
 					// $trans_id = $this->pdo_db->lastInsertId();
@@ -413,12 +408,12 @@ class DbHandler{
 					$this->pdo_db->query($query2);
 
 					// send token to sms
-					$msg = "$token this is your Selcom Card App verification code.";
+					$msg = "$token is your Selcom Card App verification code.";
 
 					$response['resultcode']="000";
-					$response['result']=$msg;//"Verification code sent your number";
+					$response['result']="Verification code sent your number";
 
-					//send_sms($msisdn,$msg);
+					send_sms($msisdn,$msg);
 
 				}else{
 					$response['resultcode'] = "1003";
@@ -1710,7 +1705,7 @@ function lookup($utilitycode,$utilityref, $amount, $msisdn) {
 function p2p($transid,$reference,$utilityref,$msisdn,$amount){
 		$proceed = "OK";
 		$vendor = "TRANSSNET";
-		$service = "fundTransfer";
+		$service = "P2P";
 		$channel = "TPAY";
 		
 		// check if transaction exists
@@ -1737,7 +1732,7 @@ function p2p($transid,$reference,$utilityref,$msisdn,$amount){
 				$setting_maxp2plimit = $settings['setting_maxp2plimit'];
 */
 				// save the transaction
-				$query = "INSERT INTO transaction (fulltimestamp, transid, reference, vendor, card, amount, initiate_ts, channel, utilitycode, name, msisdn, dealer, type, utilityref) VALUES (NOW(), '$transid', '$reference', '$vendor', '$masked_card', '0', NOW(), '$channel', '$service', '$name', '$msisdn', '$dealer', 'DEBIT', '$utilityref')";
+				$query = "INSERT INTO transaction (fulltimestamp, transid, reference, vendor, card, amount, initiate_ts, channel, utilitycode, name, msisdn, dealer, type, utilityref) VALUES (NOW(), '$transid', '$reference', '$vendor', '$masked_card', '0', NOW(), 'APP', '$service', '$name', '$msisdn', '$dealer', 'DEBIT', '$utilityref')";
 				$this->pdo_db->exec($query);
 				$trans_id = $this->pdo_db->lastInsertId();
 

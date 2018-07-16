@@ -24,8 +24,8 @@ if ($body){
 
         $err = Validate::valid($body);
         if (!empty($err) && $err!="" ){
-                echo ('err:'.json_encode($err));
-                return false;
+        echo ('err:'.json_encode($err));
+        return false;
         }
         //Verify Signature against client Public Key
         if ( Validate::verify($headers)) {

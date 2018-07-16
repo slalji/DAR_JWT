@@ -54,7 +54,29 @@ class DB extends PDO {
     {
         return substr(str_shuffle(implode("", (array_merge(range(0, 25))))), 0, $length);
     }
-
+   /* private function getKeyValuePair($obj){
+    
+        $str="{";
+        foreach ($obj as $key => $value){
+        $str .= ( ' ,"'.$key .'":"'.$value.'"' ) ;
+        }
+        return $str."}";
+        
+    }
+    protected function toString($data){
+        $params="{";
+            foreach($data as $k => $d){
+                if(is_object($d)){
+                $params .=$k.":";
+                    $params .= $this->getKeyValuePair($d);  
+                }
+                else{
+                    $params .= '"'.$k .'":"'.$d.'", ';
+                }
+            }
+            return $params .="}";
+    }
+    */
     public static function toDateTime($dt){
         if( $dt == date('Y-m-d H:i:s',strtotime($dt)) ){
             // date is in fact in one of the above formats
@@ -82,7 +104,7 @@ class DB extends PDO {
             $message['status']="Internal Server Error";
             //$message['method']="openAccount";
             $message['data']=$err;
-            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 500, "Message"=>($message)];
+            $respArray = ['transId'=>$data->transId,'reference'=>$ref,'responseCode' => 500, "Message"=>($message)];
 
            return json_encode($respArray); 
     }
@@ -125,13 +147,16 @@ class DB extends PDO {
             case 'nameLookup': print_r( print_r($transaction->NameLookup($data))); break;
             case 'transactionLookup': print_r( print_r($transaction->TransactionLookup($data))); break;
             case 'biller': print_r( $transaction->Biller($data)); break;
+            case 'requestVCN': print_r( $transaction->RequestVCN($data)); break;
             case 'linkVCNAccount': print_r( $transaction->LinkVCNAccount($data)); break;
-            case 'changeStatus': print_r( $transaction->updateAccountStatus($data)); break;
-            case 'requestCard': print_r( $transaction->requestCard($data)); break; //requestVNC
+            case 'disburseLoan': print_r( $transaction->DisburseLoan($data)); break;
+            case 'suspenseAccount': print_r( $transaction->SuspenseAccount($data)); break;
+            case 'closeAccount': print_r( $transaction->CloseAccount($data)); break;
+            case 'activateAccount': print_r( $transaction->ActivateAccount($data)); break;
             case 'reversal': print_r( $transaction->Reversal($data)); break;
             case 'exGratiaPayments': print_r( $transaction->ExGratiaPayments($data)); break;
-            case 'checkBalance': print_r( $transaction->checkBalance($data)); break;
-            case 'getStatement': print_r( $transaction->getStatement($data)); break;
+            case 'BE': print_r( $transaction->BE($data)); break;
+            case 'MS': print_r( $transaction->MS($data)); break;
             default: print_r('invalid command method found: '.$method);
             
         }
