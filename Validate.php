@@ -191,9 +191,10 @@ class Validate
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-        if(checkTransid($payload)){
+       /* if(checkTransid($payload)){
             $err[]='duplicate transaction';
         }
+        */
         $data = isset($err) ? $err :false;
     
         return ($err);
@@ -247,9 +248,10 @@ class Validate
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-        if(self::checkTransid($payload->transid)){
+       /* if(self::checkTransid($payload->transid)){
             $err[]='duplicate transaction';
         }
+        */
         $data = isset($err) ? $err :false;
     
         return ($err);
@@ -266,9 +268,10 @@ class Validate
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-        if(self::checkTransid($payload->transid)){
+        /*if(self::checkTransid($payload->transid)){
             $err[]='duplicate transaction';
         }
+        */
         $data = isset($err) ? $err :false;
     
         return ($err);

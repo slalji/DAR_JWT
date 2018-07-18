@@ -155,7 +155,7 @@ class Transactions
         Msisdn required
         Card required
         Status default = 0         
-        Dealer = Selcom
+        Dealer = Transsnet
         Reference create
         Email if, else ''
         Phone if, else ''
@@ -175,7 +175,7 @@ class Transactions
         $payload['name'] = $request['firstName']. ' '.$request['lastName'];
         $payload['msisdn'] = $request['msisdn'];
         $payload['card'] = isset($request['card'])?$request['card']:'';
-        $payload['dealer'] = 'Selcom';
+        $payload['dealer'] = 'Transset';
         $payload['registeredby'] = 'SelcomTranssetAPI';
         $payload['confirmedby'] = 'SelcomTranssetAPI';
         $payload['registertimestamp'] =$request['fulltimestamp'];
@@ -299,9 +299,28 @@ class Transactions
         
         
     }
+    public function _checkDupTrans($transid){
+        $message = array();
+        $message['resultcode']="002";
+        $message['result']="Duplicate request";
+           
+           
+        $sql ="select transid from transaction where transid=".$transid;
+        $stmt = $this->conn->prepare( $sql );
+        $stmt->execute();
+        if ($stmt->rowCount() > 0){
+            return $message;
+        }
+            
+        else 
+            return false;
+
+            
+           
+    }
     public function openAccount($data)   {
         //check for required fields eg accountNo, msisdn, fname lname
-        $err = Validate::openAccount($data);
+        $err = Validate::openAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);
         try{
@@ -317,7 +336,7 @@ class Transactions
             
 
             //add to card DB
-            $last_id = $this->_addCard($payload);
+            $last_id = $this->_addCard($payload);// active = 0 not happening
             if ($last_id < 0){
                 $error = 'Transaction error at: _addCard '.$e->getMessage();
                 throw new Exception($error);
@@ -349,25 +368,40 @@ class Transactions
     public function updateAccount($data)   {
         //check for required fields eg accountNo, transid, fname lname
         //Validate::openAccount($data);
+
         $payload = (array)$data;
+        $tier = strtoupper(isset($payload['tier'])?$payload['tier']:$payload['']);
        
         //update accountProfile DB
         $customer = $this->_updateAccountProfile($payload);
         $payload['accountNo']=$customer;
+        if(isset($tier)){
+       //die('here '.$customer);
+            switch($tier){
+                case 'B': $tier='B'; break;
+                case 'C': $tier='C'; break;
+                case 'D': $tier='D'; break;
+                default: 'A';
+            }
+            //$account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
+            //$customer = $this->_getAccountNo($account);
+            $query = "UPDATE card SET tier='$tier' WHERE id=$customer";
+            $this->conn->query($query);
+        }
            
 
-            $payload['reference']=$this->reference;
-            $payload['fulltimestamp'] = date('Y-m-d H:i:s');
-            //$payload['transid'] = $data->transid;
-            $payload['method'] = 'updateAccount';
-            unset($payload['transid']) ;
-        
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="updateAccount";
-            $message['data']=$payload;
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
-        
+        $payload['reference']=$this->reference;
+        $payload['fulltimestamp'] = date('Y-m-d H:i:s');
+        //$payload['transid'] = $data->transid;
+        $payload['method'] = 'updateAccount';
+        unset($payload['transid']) ;
+    
+        $message = array();
+        $message['status']="SUCCESS";
+        $message['method']="updateAccount";
+        $message['data']=$payload;
+        $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+    
         return (json_encode($respArray));
     }
 
@@ -384,7 +418,8 @@ class Transactions
             
             $where = 'where ';             
             $where .= isset($payload['customerNo'])?'customerNo='.$payload['customerNo']:'msisdn='.$payload['msisdn'];
-            $sql ="select firstName, lastName, email, msisdn, accountNo, customerNo, addressLine1, addressCity, addressCountry, dob, currency, gender, nationality from accountprofile ".$where;
+            //$sql ="select firstName, lastName, email, msisdn, accountNo, customerNo, addressLine1, addressCity, addressCountry, dob, currency, gender, nationality from accountprofile ".$where;
+            $sql ="select  * from accountprofile ".$where;
 
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);            
@@ -660,7 +695,7 @@ class Transactions
         $name =  $profile[0]['firstName'].' '. $profile[0]['lastName'];
         
       
-        $card = "NA";
+        $card = "TPAY";
         $pin = '1234';
         $confirmPin = '1234';
 
@@ -692,5 +727,142 @@ class Transactions
         }
         return json_encode($respArray);
     }
+    public function cashin($data){
+        //check for required fields eg transid return accountprofile info of this transid 
+       /*$err = Validate::accountState($data);
+        if (!empty($err))
+            return DB::getErrorResponse($data, $err, $this->reference);        
+        $payload = (array)$data; 
+        */ 
+                 
+        $payload = (array)$data;
+        $payload['reference']=$this->reference;  
+        $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
+        $customer = $this->_getAccountNo($account);
+        $profile = json_decode($this->_getProfile($customer), true);
+        $msisdn_acct = $profile[0]['msisdn'];
+        $name =  $profile[0]['firstName'].' '. $profile[0]['lastName']; 
+        $amount = $payload['amount'];
+        $transid = $payload['transid'];
+        $msisdn = $payload['msisdn'];   
+        
+
+        $payload['accountNo']=$customer;
+        unset( $payload['transid']);
+                   
+        try{
+           
+            $selcom = new DbHandler();
+            $result = $selcom->utilityPayment($transid,'SPCASHIN',$msisdn_acct,$msisdn,$amount);            
+           
+
+            $message = array();
+            $message['status']="SUCCESS";
+            $message['method']="cashin";
+            $message['data']=$result;
+
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+        
+           
+
+        }catch (Exception $e) {
+            
+            $message = array();
+            $message['status']="ERROR";
+            $message['method']='Transaction error at: cashin '.$e->getMessage()." : ".$sql;
+            
+            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
+        }
+        return json_encode($respArray);
+    }
+    public function payUtility($data){
+        //check for required fields eg transid return accountprofile info of this transid 
+       /*$err = Validate::payUtility($data);
+        if (!empty($err))
+            return DB::getErrorResponse($data, $err, $this->reference);        
+        $payload = (array)$data; 
+        */ 
+                 
+        $payload = (array)$data;
+        $payload['reference']=$this->reference;  
+        $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
+        $customer = $this->_getAccountNo($account);
+        $profile = json_decode($this->_getProfile($customer), true);
+        $name =  $profile[0]['firstName'].' '. $profile[0]['lastName'];
+        $utilitycode = $payload['utilitycode'];
+        $utilityref = $payload['utilityref'];
+        $amount = $payload['amount'];
+        $transid = $payload['transid'];
+        $msisdn = $payload['msisdn'];
+
+        $payload['accountNo']=$customer;
+        unset( $payload['transid']);
+                   
+        try{
+           
+            $selcom = new DbHandler();
+            $result = $selcom->utilityPayment($transid,$utilitycode,$utilityref,$msisdn,$amount,$payload['reference']);            
+           
+
+            $message = array();
+            $message['status']="SUCCESS";
+            $message['method']="payUtility";
+            $message['data']=$result;
+
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+        
+           
+
+        }catch (Exception $e) {
+            
+            $message = array();
+            $message['status']="ERROR";
+            $message['method']='Transaction error at: payUtility '.$e->getMessage()." : ".$sql;
+            
+            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
+        }
+        return json_encode($respArray);
+    }
+    public function reserveAmount($data)   {
+        //check for required fields eg transid return accountprofile info of this transid 
+        
+       /* $err = Validate::reserveAmount($data);
+        if (!empty($err))
+            return DB::getErrorResponse($data, $err, $this->reference);
+         */
+        $payload = (array)$data;
+        $ref=$this->reference;  
+        $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
+        $customer = $this->_getAccountNo($account);
+        $amount = $payload['amount'];
+        $transid = $payload['transid'];
+       
+        try{
+            $sql ="UPDATE card SET suspense=suspense+$amount WHERE id=$customer";
+           
+            $stmt = $this->conn->prepare( $sql );
+            $stmt->execute();
+            $selcom = new DbHandler();
+            //create transaction to debit card of the amount added to suspense
+            $result = $selcom->reserveAccount($transid,$ref,$customer,$msisdn,$amount);
+
+            $message = array();
+            $message['status']="SUCCESS";
+            $message['method']="reserveAmount";
+            $message['data']=$payload;
+            
+            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 200, "Message"=>($message)];
+        }
+        catch (Exception $e) {
+            
+            $message = array();
+            $message['status']="ERROR";
+            $message['method']='Transaction error at: reserveAmount '.$e->getMessage()." : ";//.$sql;
+            
+            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
+        }
+        return (json_encode($respArray));
+    }
+   
 
 }
