@@ -125,7 +125,7 @@ class DB extends PDO {
             case 'nameLookup': print_r( print_r($transaction->NameLookup($data))); break;
             case 'transactionLookup': print_r( print_r($transaction->TransactionLookup($data))); break;
             case 'reserveAmount': print_r( $transaction->reserveAmount($data)); break;
-            case 'linkVCNAccount': print_r( $transaction->LinkVCNAccount($data)); break;
+            case 'unReserveAccount': print_r( $transaction->unReserveAccount($data)); break;
             case 'changeStatus': print_r( $transaction->updateAccountStatus($data)); break;
             case 'requestCard': print_r( $transaction->requestCard($data)); break; //requestVNC
             case 'reversal': print_r( $transaction->Reversal($data)); break;

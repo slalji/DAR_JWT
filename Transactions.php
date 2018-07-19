@@ -129,6 +129,19 @@ class Transactions
         return $result;           
            
     }
+    public function _getSuspense($customerNo){
+        //get accountNo;
+        
+        $accountNo = $this->_getAccountNo($customerNo);
+
+        $sql ="select suspense from card where id ='$accountNo'";  
+
+        $stmt = $this->conn->prepare( $sql );
+        $stmt->execute();            
+        $result = $stmt->fetchColumn();
+        return $result;           
+           
+    }
     public function _getProfile($accountNo){
         
         $sql ="select * from accountProfile where accountNo ='$accountNo' ";  
@@ -836,20 +849,24 @@ class Transactions
         $customer = $this->_getAccountNo($account);
         $amount = $payload['amount'];
         $transid = $payload['transid'];
+        $msisdn = $payload['msisdn'];
+        $utilityref = $payload['msisdn'];//same account
        
         try{
-            $sql ="UPDATE card SET suspense=suspense+$amount WHERE id=$customer";
+            //create transaction to debit card of the amount added to suspense
+            $selcom = new DbHandler();            
+            $result = $selcom->reserveAccount($transid,$ref,$utilityref,$msisdn,$amount);
+
+            /*$sql ="UPDATE card SET suspense=suspense+$amount WHERE id=$customer";
            
             $stmt = $this->conn->prepare( $sql );
             $stmt->execute();
             $selcom = new DbHandler();
-            //create transaction to debit card of the amount added to suspense
-            $result = $selcom->reserveAccount($transid,$ref,$customer,$msisdn,$amount);
-
+            */
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="reserveAmount";
-            $message['data']=$payload;
+            $message['data']=$result;
             
             $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 200, "Message"=>($message)];
         }
@@ -858,6 +875,44 @@ class Transactions
             $message = array();
             $message['status']="ERROR";
             $message['method']='Transaction error at: reserveAmount '.$e->getMessage()." : ";//.$sql;
+            
+            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
+        }
+        return (json_encode($respArray));
+    }
+    public function unReserveAccount($data)   {
+         //check if the reference is the same as on in the transaction
+        
+       $err = Validate::unReserveAccount($data);
+        if (!empty($err))
+            return DB::getErrorResponse($data, $err, $this->reference);
+
+        $payload = (array)$data;
+        $ref=$this->reference;  
+        $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
+        $customer = $this->_getAccountNo($account);
+        $amount = $payload['amount'];
+        $transid = $payload['transid'];
+        $msisdn = $payload['msisdn'];
+        $utilityref = $payload['msisdn'];//same account
+       
+        try{
+            //create transaction to debit card of the amount added to suspense
+            $selcom = new DbHandler();            
+            $result = $selcom->unReserveAccount($transid,$ref,$utilityref,$msisdn,$amount);
+
+            $message = array();
+            $message['status']="SUCCESS";
+            $message['method']="unReserveAccount";
+            $message['data']=$result;
+            
+            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 200, "Message"=>($message)];
+        }
+        catch (Exception $e) {
+            
+            $message = array();
+            $message['status']="ERROR";
+            $message['method']='Transaction error at: unReserveAccount '.$e->getMessage()." : ";//.$sql;
             
             $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
         }

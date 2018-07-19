@@ -119,6 +119,69 @@ class Validate
         return false;
         
     }
+    public static function _getAccountNo($customerNo){
+        $db = new DB();
+        $sql ="select accountNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
+
+        $stmt = $db->conn->prepare( $sql );
+        $stmt->execute();            
+        $result = $stmt->fetchColumn();
+        return $result;           
+           
+    }
+    public static function _getSuspense($customerNo){
+        //get accountNo;
+        $db = new DB();
+        $accountNo = Validate::_getAccountNo($customerNo);
+
+        $sql ="select suspense from card where id ='$accountNo'";  
+
+        $stmt = $db->conn->prepare( $sql );
+        $stmt->execute();            
+        $result = $stmt->fetchColumn();
+        return $result;           
+           
+    }
+    public static function _checkRef($payload){
+        //get accountNo;
+        $db = new DB();
+        //$customerNo = $payload['customerNo'];
+        $ref = $payload->reference;
+       // $accountNo = Validate::_getAccountNo($customerNo);
+       $flag=false;
+        try{
+           
+            $sql ="select utilitycode, utilityref, dealer, amount from transaction where reference ='$ref'";  
+
+            $stmt = $db->conn->prepare( $sql );
+            $stmt->execute();            
+            $rows = $stmt->fetchAll( PDO::FETCH_ASSOC );
+            if(!$rows)
+               return false;
+            $result = ($rows[0]);
+            //die(print_r($result));
+            
+            if($result['utilitycode'] == 'reserveAccount'){
+                $flag=true;
+            }
+            else if ($result['utilityref'] == $payload->msisdn){
+                $flag=true;
+            }
+            else if ($result['dealer']=='Transsnet'){
+                $flag=true;
+            }
+            else if ($result['amount']==$payload->amount){
+                $flag=true;
+            }             
+            return $flag;
+        }
+        catch(Exception $e){
+            return false;
+        }
+       
+                 
+           
+    }
     public static function checkTransid($transid){
        
         $data = isset($err) ? $err :false;
@@ -275,6 +338,32 @@ class Validate
         $data = isset($err) ? $err :false;
     
         return ($err);
+    }
+    public static function unReserveAccount($payload) {
+        $err = array();
+        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return $err[]='customerNo or msisdn may not be empty';
+        }
+        if (!isset($payload->reference) || empty($payload->reference)) {
+            return $err[]='reference may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        if (!isset($payload->amount) || empty($payload->amount)) {
+            $err[]='amount may not be empty';
+        }
+        
+        if(Validate::_getSuspense($payload->customerNo) == 0){
+            $err[]='You do not have funds to release at this time';
+        }
+        if(!Validate::_checkRef($payload)){
+            $err[]='reference is invalid';
+        }
+        $data = isset($err) ? $err :false;
+    
+        return ($data);
     }
     
 

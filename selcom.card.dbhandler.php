@@ -108,7 +108,7 @@ class DbHandler{
 
 	private function _get_card_info($id){
 
-		$query = "SELECT balance, msisdn, id, name, language, status, state, card, pin, failcount, active, stolen, alert, dealer, dailytrans, last_transaction, holdinglimit, dailylimit, tier, fuel_scheme, fuel_scheme_name, fuel_balance, fuel_last_transaction, fuel_client FROM card WHERE ";
+		$query = "SELECT balance, msisdn, id, name, language, status, state, card, pin, failcount, active, stolen, alert, dealer, suspense, dailytrans, last_transaction, holdinglimit, dailylimit, tier, fuel_scheme, fuel_scheme_name, fuel_balance, fuel_last_transaction, fuel_client FROM card WHERE ";
 
 		if(($id)==16){
 			$query .= "card='$uid'";
@@ -147,6 +147,7 @@ class DbHandler{
 			$info['stolen'] = $row['stolen'];
 			$info['alert'] = $row['alert'];
 			$info['dealer'] = $row['dealer'];
+			$info['suspenses'] = $row['suspense'];
 			$info['dailytrans'] = $row['dailytrans'];
 			$info['lasttrans'] = substr($row['last_transaction'], 0, 10);
 			$info['now'] = substr($ts, 0, 10);
@@ -1792,7 +1793,7 @@ function p2p($transid,$reference,$utilityref,$msisdn,$amount){
 				
 				$masked_card = $info['masked_card'];
 				$name = $info['name'];
-				$dealer = $info['dealer'];//check if Transsnet
+				$dealer = 'Transsnet';//$info['dealer'];//check if Transsnet
 				$cardnum = $info['cardnum'];
 
 				/*$settings = $this->_get_card_settings();
@@ -2112,7 +2113,7 @@ function p2p($transid,$reference,$utilityref,$msisdn,$amount){
 					$dest_reply_arr['description']=$dest_reply;
 					//die(print_r($reply_arr . ' '.$dest_reply_arr));
 					$resp['sender']=$reply_arr;
-					$resp['destination']=$dest_reply_arr;
+					$resp['receiver']=$dest_reply_arr;
 					return $resp;
 
 				}
@@ -2429,360 +2430,690 @@ function p2p($transid,$reference,$utilityref,$msisdn,$amount){
 		return $response;
 	}
 	//reserveFunds
-function reserveAccount($transid,$reference,$account,$msisdn,$amount){
-	$proceed = "OK";
-	$vendor = "TRANSSNET";
-	$service = "reserveAccount";
-	$channel = "TPAY";
-	
-	// check if transaction exists
-	$chk_resp = $this->_checkTransaction($msisdn,$transid);
-	if($chk_resp['resultcode']=="000"){
-		//$reference = $reference;
-
-		$card_resp = $this->_get_card_info($msisdn);
-		die(print_r());
-		if($card_resp['resultcode']=="000"){
-			$info = $card_resp['info'];
-			
-			$masked_card = $info['masked_card'];
-			$name = $info['name'];
-			$dealer = $info['dealer'];//check if Transsnet
-			$cardnum = $info['cardnum'];
-
-			/*$settings = $this->_get_card_settings();
-
-			$setting_minbplimit= $settings['setting_minbplimit'];
-			$setting_maxbplimit= $settings['setting_maxbplimit'];
-			$setting_failcount = $settings['setting_failcount'];
-			$setting_minp2plimit = $settings['setting_minp2plimit'];
-			$setting_maxp2plimit = $settings['setting_maxp2plimit'];
-*/
-			// save the transaction
-			$query = "INSERT INTO transaction (fulltimestamp, transid, reference, vendor, card, amount, initiate_ts, channel, utilitycode, name, msisdn, dealer, type, utilityref) VALUES (NOW(), '$transid', '$reference', '$vendor', '$masked_card', '0', NOW(), '$channel', '$service', '$name', '$msisdn', '$dealer', 'DEBIT', '$utilityref')";
-			$this->pdo_db->exec($query);
-			$trans_id = $this->pdo_db->lastInsertId();
-			
-
-			// load account settings
-			//$query = "SELECT balance, status, c2b, b2c, id, tariff, name FROM card.account WHERE utilitycode='P2P'";
-			$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
-			
-			$row = $this->pdo_db->query($query)->fetch();
-
-			$account_bal = $row['balance'];
-			$account_status = $row['status'];
-			//die(print_r('account_status '.$account_status.' : '.$row['status']));
-			//$account_c2b = $row['c2b'];
-			$account_id = $row['id'];
-			$account_no = $row['accountNo'];
-			//$account_tariff = $row['tariff'];
-			$account_name = $row['name'];
-			
-
-			 // get charges
-			$charge = 0;
-			/*$query = "SELECT rate, type FROM card.tariff WHERE ($amount BETWEEN lower AND upper) AND code='$account_tariff'";
-			$row = $this->pdo_db->query($query)->fetch();
-
-			if ($row) {
-				$rate = $row['rate'];
-				$type = $row['type'];
-
-				if ($type=="PERCENT") {
-					$charge = floor($rate*$amount);
-				} else {
-					$charge = $rate;
-				}
-			}
-			*/
-
-			$obal = $info['obal'];
-			
-			$failcount = $info['failcount'];
-			$active = $info['active'];
-			$status=$info['status'];
-			$stolen=$info['stolen'];
-			$ts = $info['ts'];
-			$id = $info['id'];
-			
-			$now = $info['now'];
-			$lasttrans = $info['lasttrans'];
-			$dailytrans = $info['dailytrans'];
-			$dailylimit = $info['dailylimit'];
-			
-			
-
-			//if (($account_status!="1") OR ($account_c2b!="1")) {
-			if (($account_status != 1) ) {
-				die(print_r('account_status '.$account_status));
-				$result = "045";
-				$reply = "Account $account_name is closed";
-				$proceed="NOK";
-			}/*elseif ($failcount>=$setting_failcount) {
-				$result = "075";
-				$reply = "PIN tries exceeded";
-				$proceed="NOK";
-			}*/elseif($active!=0){
-				die(print_r('active '.$active));
-				$result = "076";
-				$reply = "Card not activated";
-				$proceed="NOK";
-			}elseif($status!=1){
-				die(print_r('status '.$status));					
-				$result = "045";
-				$reply = "Card blocked";
-				$proceed="NOK";
-			}/*elseif($stolen=="1"){
-				$result = "057";
-				$reply = "Lost or stolen card";
-				$proceed="NOK";
-			}elseif(($amount < $setting_minp2plimit) OR ($amount > $setting_maxp2plimit)) {
-				$reply = "Invalid amount";
-				$result = "013";
-				$proceed="NOK";
-			}*/elseif(($amount + $charge) > $obal) {
-				die(print_r('status '.$amount + $charge.' : '.$obal));						
-				$result = '051';
-				$reply = "Insufficient funds";
-				$proceed="NOK";
-			}
-
-			if($proceed=="NOK"){
-				$resp['resultcode'] = $result;
-				$resp['result'] = $reply;
-
-				$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
-				$this->pdo_db->query($query);
-				
-
-				return $resp;
-			}
-			
-			$running = "0";
-
-			if($now==$lasttrans){
-				$running = $dailytrans + $amount + $charge;
-
-				if($running>$dailylimit){
-					$result = '065';
-					$reply = 'Transaction exceeds daily transaction limit';
-					$proceed = "NOK";
-				}
-			}else{
-				$running = $amount + $charge;
-			}
-//transfer to msisdn
-
-			if (strlen($utilityref)!=16){
-				if(strlen($utilityref)!=12){
-					if(strlen($utilityref)==10){
-						$utilityref = "255" . substr($utilityref, 1);
-					}
-				}
-			}
-			//cannot have same card number
-			if(($cardnum==$utilityref) || ($msisdn==$utilityref)) {
-				$result = "057";
-				$reply = "Invalid destination card";
-				$proceed = "NOK";
-			}
+	function reserveAccount($transid,$reference,$utilityref,$msisdn,$amount){
+		$proceed = "OK";
+		$vendor = "TRANSSNET";
+		$service = "reserveAccount";
+		$channel = "TPAY";
 		
-			if($proceed=="NOK"){
-				$resp['resultcode'] = $result;
-				$resp['result'] = $reply;
+		// check if transaction exists
+		$chk_resp = $this->_checkTransaction($msisdn,$transid);
+		
+		if($chk_resp['resultcode']=="000"){
+			//$reference = $reference;
 
-				$query = "UPDATE card.transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
-				$this->pdo_db->query($query);
-
-				return $resp;
-			}
-
-			// get destination card details
-		   $dest_card_resp = $this->_get_card_info($utilityref);
-		  
-		   
-			if($dest_card_resp['resultcode']!="000"){
-				$result= "056";
-				$reply = "Destination card not found";
-				$proceed = "NOK";
-				$resp['resultcode'] = $result;
-				$resp['result'] = $reply;
-
-				return $resp;
-
-			}
-			else{
+			$card_resp = $this->_get_card_info($msisdn);
+			
+			if($card_resp['resultcode']=="000"){
+				$info = $card_resp['info'];
 				
-				$dest_info = $dest_card_resp['info'];
+				$masked_card = $info['masked_card'];
+				$name = $info['name'];
+				$dealer = 'Transsnet';//$info['dealer'];//check if Transsnet
+				$cardnum = $info['cardnum'];
+				$charge=0;
 
-				$dest_obal = $dest_info['obal'];
-				$dest_obal_format = $dest_info['obal_format'];
-				$dest_msisdn = $dest_info['msisdn'];
-				$dest_id = $dest_info['id'];
-				$dest_name = $dest_info['name'];
-				$dest_language = $dest_info['language'];
-				$dest_ts = $dest_info['ts'];
-				$dest_status = $dest_info['status'];
-				$dest_state = $dest_info['state'];
-				$dest_cardnum = $dest_info['cardnum'];
-				$dest_masked_card = $dest_info['masked_card'];
-				$dest_active = $dest_info['active'];
+				/*$settings = $this->_get_card_settings();
 
-				$dest_stolen = $dest_info['stolen'];
-				$dest_dailytrans = $dest_info['dailytrans'];
-				$dest_lasttrans = $dest_info['lasttrans'];
-				$dest_now = $dest_info['now'];
-				$dest_holdinglimit = $dest_info['holdinglimit'];
-				$dest_dailylimit = $dest_info['dailylimit'];
-				$dest_tier = $dest_info['tier'];
+				$setting_minbplimit= $settings['setting_minbplimit'];
+				$setting_maxbplimit= $settings['setting_maxbplimit'];
+				$setting_failcount = $settings['setting_failcount'];
+				$setting_minp2plimit = $settings['setting_minp2plimit'];
+				$setting_maxp2plimit = $settings['setting_maxp2plimit'];
+	*/
+				// save the transaction
+				$query = "INSERT INTO transaction (fulltimestamp, transid, reference, vendor, card, amount, initiate_ts, channel, utilitycode, name, msisdn, dealer, type, utilityref) VALUES (NOW(), '$transid', '$reference', '$vendor', '$masked_card', '0', NOW(), '$channel', '$service', '$name', '$msisdn', '$dealer', 'DEBIT', '$utilityref')";
+				$this->pdo_db->exec($query);
+				$trans_id = $this->pdo_db->lastInsertId();
+				
 
-				if($dest_status!=="1"){
+				// load account settings
+				//$query = "SELECT balance, status, c2b, b2c, id, tariff, name FROM card.account WHERE utilitycode='P2P'";
+				$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
+				
+				$row = $this->pdo_db->query($query)->fetch();
+
+				$account_bal = $row['balance'];
+				$account_status = $row['status'];
+				$account_id = $row['id'];
+				$account_no = $row['accountNo'];
+				$account_name = $row['name'];
+				
+
+				$obal = $info['obal'];
+				
+				$failcount = $info['failcount'];
+				$active = $info['active'];
+				$status=$info['status'];
+				$stolen=$info['stolen'];
+				$ts = $info['ts'];
+				$id = $info['id'];
+				
+				$now = $info['now'];
+				$lasttrans = $info['lasttrans'];
+				$dailytrans = $info['dailytrans'];
+				$dailylimit = $info['dailylimit'];
+				
+				
+
+				//if (($account_status!="1") OR ($account_c2b!="1")) {
+				if (($account_status != 1) ) {
+					//die(print_r('account_status '.$account_status));
 					$result = "045";
-					$reply = "Card ".$dest_masked_card." blocked";
-					$proceed = "NOK";
-				}elseif($dest_stolen=="1"){
+					$reply = "Account $account_name is closed";
+					$proceed="NOK";
+				}/*elseif ($failcount>=$setting_failcount) {
+					$result = "075";
+					$reply = "PIN tries exceeded";
+					$proceed="NOK";
+				}*/elseif($active!=0){
+					//die(print_r('active '.$active));
+					$result = "076";
+					$reply = "Card not activated";
+					$proceed="NOK";
+				}elseif($status!=1){
+					//die(print_r('status '.$status));					
+					$result = "045";
+					$reply = "Card blocked";
+					$proceed="NOK";
+				}/*elseif($stolen=="1"){
 					$result = "057";
-					$reply = "Lost or stolen card $dest_masked_card";
-					$proceed = "NOK";
+					$reply = "Lost or stolen card";
+					$proceed="NOK";
+				}elseif(($amount < $setting_minp2plimit) OR ($amount > $setting_maxp2plimit)) {
+					$reply = "Invalid amount";
+					$result = "013";
+					$proceed="NOK";
+				}*/elseif(($amount + $charge) > $obal) {
+					//die(print_r('status '.$amount + $charge.' : '.$obal));						
+					$result = '051';
+					$reply = "Insufficient funds";
+					$proceed="NOK";
 				}
 
 				if($proceed=="NOK"){
 					$resp['resultcode'] = $result;
 					$resp['result'] = $reply;
-					
-					$query = "UPDATE card.transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
+
+					$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
 					$this->pdo_db->query($query);
+					
 
 					return $resp;
 				}
 				
-				$dest_running = "0";
+				$running = "0";
 
-				if($dest_now==$dest_lasttrans){
-					$dest_running = $dest_dailytrans + $amount;
+				if($now==$lasttrans){
+					$running = $dailytrans + $amount + $charge;
 
-					if($dest_running>$dest_dailylimit){
+					if($running>$dailylimit){
 						$result = '065';
-						$reply = 'Transaction exceeds daily transaction limit for $dest_masked_card';
+						$reply = 'Transaction exceeds daily transaction limit';
 						$proceed = "NOK";
 					}
 				}else{
-					$dest_running = $amount;
+					$running = $amount + $charge;
 				}
-			}
+	//transfer to msisdn
 
-			if($proceed=="NOK"){
-				$response['resultcode'] = $result;
-				$response['result'] = $reply;
-
-				$query = "UPDATE card.transaction SET result='$result', message='$reply', complete_ts=NOW(),amount='$amount' WHERE id=$trans_id";
-				$this->pdo_db->query($query);
-			}else{
-
-				// --Debit sender --
-				$cbal = $obal - $amount - $charge;
-
-				$amount_format = number_format($amount, 0);
-				$charge_format = number_format($charge, 0);
-				$cbal_format = number_format($cbal, 0);
-
-				$reply = "Successfully sent funds to $dest_name. Your Account has been debited TZS $amount_format on $ts.";
+				if (strlen($utilityref)!=16){
+					if(strlen($utilityref)!=12){
+						if(strlen($utilityref)==10){
+							$utilityref = "255" . substr($utilityref, 1);
+						}
+					}
+				}
+				//cannot have same card number
 				
-				if($charge>0){
-					$reply .= " Transaction charge $charge_format.";
+				//if((isset($cardnum) && $cardnum!=$utilityref) || (!isset($cardnum) && $msisdn!=$utilityref)) {
+				if( $msisdn!=$utilityref){
+					$result = "057";
+					$reply = "Invalid destination account for reserveAccount transaction";
+					$proceed = "NOK";
+				}
+			
+				if($proceed=="NOK"){
+					$resp['resultcode'] = $result;
+					$resp['result'] = $reply;
+
+					$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
+					$this->pdo_db->query($query);
+
+					return $resp;
 				}
 
-				$reply .=" Updated balance TZS $cbal_format. Reference $reference";
-				
-				$reply_arr=array();
-				$reply_arr['accountNo']=$id;
-				$reply_arr['balance']=$cbal;
-				$reply_arr['reference']=$reference;
-				$reply_arr['amount']=$amount;
-				$reply_arr['dated']=$ts;
-				$reply_arr['description']=$reply;
-				
+				// get destination card details
+			/*$dest_card_resp = $this->_get_card_info($utilityref);
+			
+			
+				if($dest_card_resp['resultcode']!="000"){
+					$result= "056";
+					$reply = "Destination card not found";
+					$proceed = "NOK";
+					$resp['resultcode'] = $result;
+					$resp['result'] = $reply;
 
-				$query = "UPDATE card SET obal=balance, cbal=balance-$amount-$charge, balance=balance-$amount-$charge, reference='$reference', last_transaction=NOW(), dailytrans='$running' WHERE id=$id";
-				$this->pdo_db->query($query);
+					return $resp;
 
-				$query = "UPDATE transaction SET result='000', message='$reply', complete_ts=NOW(), amount='$amount', obal='$obal', cbal='$cbal', charge='$charge', utilitycode='$service', utilityref='$utilityref' WHERE id=$trans_id";
-				$this->pdo_db->query($query);
-
-				$query = "INSERT INTO ledger (fulltimestamp, vendor, card, transtype, transid, reference, amount, obal, cbal, charge, msisdn, channel, utilitycode, utilityref, name) VALUES (NOW(), '$vendor', '$masked_card', 'DEBIT', '$transid', '$reference', '$amount', '$obal', '$cbal', '$charge', '$msisdn', 'TPAY', '$service', '$utilityref', '$name')";
-				$this->pdo_db->query($query);
-				// no charges for TPAY
-				//$query = "UPDATE card.account SET charge=charge+$charge WHERE id=$account_id"; /*update accountprofile? but there is no charges*/
-				//$this->pdo_db->query($query);
-
-				//update sender profile
-				$query = "UPDATE accountprofile SET balance=balance-$amount-$charge, lastupdated=NOW()  WHERE accountNo=$id";
-				$this->pdo_db->query($query);
-
-				$tmp["date"] = $ts;
-				$tmp["biller"] = $service; //  company name
-				$tmp["amount"] = $amount;
-				$tmp["charge"] = $charge;
-				$response['result']=$reply;
-				$response['txn'] = $tmp;
-				$response['resultcode'] = "000";
-				//---
-
-				// --- Credit receiver ---
-				$dest_cbal = $dest_obal + $amount;
-
-				$amout_format = number_format($amount, 0);
-				$dest_cbal_format = number_format($dest_cbal, 0);
-
-				$dest_reply = "You have received funds from $name. Your account has been credited TZS $amount_format on $ts. Updated balance TZS $dest_cbal_format. Reference $reference";
-
-				$query = "UPDATE card SET obal=balance, cbal=balance+$amount, balance=balance+$amount, last_transaction=NOW(), dailytrans='$dest_running' WHERE id=$dest_id";
-				$this->pdo_db->query($query);
-
-				$query = "INSERT INTO ledger (fulltimestamp, vendor, card, transtype, transid, reference, amount, obal, cbal, charge, msisdn, channel, utilitycode, utilityref, name) VALUES (NOW(), '$vendor', '$dest_masked_card', 'CREDIT', '$transid', '$reference', '$amount', '$dest_obal', '$dest_cbal', '0', '$dest_msisdn', 'USSD', '$service', '$utilityref', '$name')";
-				$this->pdo_db->query($query);
-
-				
-
-				//update destination profile
-				$dest_query = "UPDATE accountprofile SET balance=balance+$amount, lastupdated=NOW()  WHERE accountNo=$dest_id";
-				$this->pdo_db->query($dest_query);
-
-				// send sms (if has app, send notification)
-				// send_sms( $msisdn, $reply);
-				// send_sms( $dest_msisdn, $dest_reply);
-
-				/*$id = $this->createNotification($msisdn,$reply,"INFO");
-				$this->sendNotification($msisdn,$reply, $id);
-				$this->sendNotification($dest_msisdn,$dest_reply, $id);
-				//--
+				}
 				*/
-				$dest_reply_arr=array();
-				$dest_reply_arr['accountNo']=$dest_id;
-				$dest_reply_arr['balance']=$dest_cbal;
-				$dest_reply_arr['reference']=$reference;
-				$dest_reply_arr['amount']=$amount;
-				$dest_reply_arr['dated']=$ts;
-				$dest_reply_arr['description']=$dest_reply;
-				//die(print_r($reply_arr . ' '.$dest_reply_arr));
-				$resp['sender']=$reply_arr;
-				$resp['destination']=$dest_reply_arr;
-				return $resp;
+				//else{
+					//destination card is the same card, use suspense field
+					/*$dest_info = $card_resp['info'];
 
+					$dest_obal = $dest_info['obal'];
+					$dest_obal_format = $dest_info['obal_format'];
+					$dest_msisdn = $dest_info['msisdn'];
+					$dest_id = $dest_info['id'];
+					$dest_name = $dest_info['name'];
+					$dest_language = $dest_info['language'];
+					$dest_ts = $dest_info['ts'];
+					$dest_status = $dest_info['status'];
+					$dest_state = $dest_info['state'];
+					$dest_cardnum = $dest_info['cardnum'];
+					$dest_masked_card = $dest_info['masked_card'];
+					$dest_active = $dest_info['active'];
+
+					$dest_stolen = $dest_info['stolen'];
+					$dest_dailytrans = $dest_info['dailytrans'];
+					$dest_lasttrans = $dest_info['lasttrans'];
+					$dest_now = $dest_info['now'];
+					$dest_holdinglimit = $dest_info['holdinglimit'];
+					$dest_dailylimit = $dest_info['dailylimit'];
+					$dest_tier = $dest_info['tier'];
+					*/
+
+					/*if($dest_status!=="1"){
+						$result = "045";
+						$reply = "Card ".$dest_masked_card." blocked";
+						$proceed = "NOK";
+					}elseif($dest_stolen=="1"){
+						$result = "057";
+						$reply = "Lost or stolen card $dest_masked_card";
+						$proceed = "NOK";
+					}
+
+					if($proceed=="NOK"){
+						$resp['resultcode'] = $result;
+						$resp['result'] = $reply;
+						
+						$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
+						$this->pdo_db->query($query);
+
+						return $resp;
+					}
+					*/
+					/*$dest_running = "0";
+
+					if($dest_now==$dest_lasttrans){
+						$dest_running = $dest_dailytrans + $amount;
+
+						if($dest_running>$dest_dailylimit){
+							$result = '065';
+							$reply = 'Transaction exceeds daily transaction limit for $dest_masked_card';
+							$proceed = "NOK";
+						}
+					}else{
+						$dest_running = $amount;
+					} 
+				//}
+
+				if($proceed=="NOK"){
+					$response['resultcode'] = $result;
+					$response['result'] = $reply;
+
+					$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(),amount='$amount' WHERE id=$trans_id";
+					$this->pdo_db->query($query);
+				}else{
+					*/
+
+					// --Debit sender --
+					$cbal = $obal - $amount - $charge;
+
+					$amount_format = number_format($amount, 0);
+					$charge_format = number_format($charge, 0);
+					$cbal_format = number_format($cbal, 0);
+
+					$reply = "Your Account has been debited TZS $amount_format on $ts.";
+					
+					/*if($charge>0){
+						$reply .= " Transaction charge $charge_format.";
+					}*/
+
+					//$reply .=" Updated balance TZS $cbal_format. Reference $reference";
+					
+					/*$reply_arr=array();
+					$reply_arr['accountNo']=$id;
+					$reply_arr['balance']=$cbal;
+					$reply_arr['reference']=$reference;
+					$reply_arr['amount']=$amount;
+					$reply_arr['dated']=$ts;
+					$reply_arr['description']=$reply;
+					*/
+
+					$query = "UPDATE card SET obal=balance, cbal=balance-$amount-$charge, balance=balance-$amount-$charge, reference='$reference', last_transaction=NOW(), dailytrans='$running' WHERE id=$id";
+					$this->pdo_db->query($query);
+
+					$query = "UPDATE transaction SET result='000', message='$reply', complete_ts=NOW(), amount='$amount', obal='$obal', cbal='$cbal', charge='$charge', utilitycode='$service', utilityref='$utilityref' WHERE id=$trans_id";
+					$this->pdo_db->query($query);
+	//do not add to ledger
+					/*$query = "INSERT INTO ledger (fulltimestamp, vendor, card, transtype, transid, reference, amount, obal, cbal, charge, msisdn, channel, utilitycode, utilityref, name) VALUES (NOW(), '$vendor', '$masked_card', 'DEBIT', '$transid', '$reference', '$amount', '$obal', '$cbal', '$charge', '$msisdn', 'TPAY', '$service', '$utilityref', '$name')";
+					$this->pdo_db->query($query);
+					*/// no charges for TPAY
+					//$query = "UPDATE card.account SET charge=charge+$charge WHERE id=$account_id"; /*update accountprofile? but there is no charges*/
+					//$this->pdo_db->query($query);
+
+					//update sender profile
+					$query = "UPDATE accountprofile SET balance=balance-$amount-$charge, lastupdated=NOW()  WHERE accountNo=$id";
+					$this->pdo_db->query($query);
+
+					$tmp["date"] = $ts;
+					$tmp["biller"] = $service; //  company name
+					$tmp["amount"] = $amount;
+					$tmp["charge"] = $charge;
+					//$response['result']=$reply;
+					$response['txn'] = $tmp;
+					$response['resultcode'] = "000";
+					//---
+
+					// --- Credit receiver ---
+					$dest_cbal = $obal + $amount;
+
+					$amout_format = number_format($amount, 0);
+					$dest_cbal_format = number_format($dest_cbal, 0);
+
+					$dest_reply = "Your account has been reserved of TZS $amount_format on $ts. Updated balance TZS $cbal_format. Reference $reference";
+
+					$query = "UPDATE card SET /*obal=balance, cbal=balance+$amount,*/ suspense=suspense+$amount, last_transaction=NOW(), dailytrans='$running' WHERE id=$id";
+					$this->pdo_db->query($query);
+
+					//do not enter into ledger as its not a complete transaction only reservation
+
+					/*$query = "INSERT INTO ledger (fulltimestamp, vendor, card, transtype, transid, reference, amount, obal, cbal, charge, msisdn, channel, utilitycode, utilityref, name) VALUES (NOW(), '$vendor', '$dest_masked_card', 'CREDIT', '$transid', '$reference', '$amount', '$dest_obal', '$dest_cbal', '0', '$dest_msisdn', 'USSD', '$service', '$utilityref', '$name')";
+					$this->pdo_db->query($query);
+					*/
+
+					
+
+					//update destination profile
+					$dest_query = "UPDATE accountprofile SET balance=balance+$amount, lastupdated=NOW()  WHERE accountNo=$id";
+					$this->pdo_db->query($dest_query);
+
+					// send sms (if has app, send notification)
+					// send_sms( $msisdn, $reply);
+					// send_sms( $dest_msisdn, $dest_reply);
+
+					/*$id = $this->createNotification($msisdn,$reply,"INFO");
+					$this->sendNotification($msisdn,$reply, $id);
+					$this->sendNotification($dest_msisdn,$dest_reply, $id);
+					//--
+					*/
+					$dest_reply_arr=array();
+					$dest_reply_arr['accountNo']=$id;
+					$dest_reply_arr['balance']=$cbal;
+					$dest_reply_arr['reference']=$reference;
+					$dest_reply_arr['amount']=$amount;
+					$dest_reply_arr['dated']=$ts;
+					$dest_reply_arr['description']=$dest_reply;
+					//die(print_r($reply_arr . ' '.$dest_reply_arr));
+					//$resp['reserver']=$reply_arr;
+					$resp['suspense']=$dest_reply_arr;
+					return $resp;
+
+				}
+
+
+			//} 
+			else {
+				$response = $card_resp;
 			}
-
-
-		} else {
-			$response = $card_resp;
 		}
-	}
-	else {
-		$response = $chk_resp;
-	}
+		else {
+			$response = $chk_resp;
+		}
 
-	return $response;
+		return $response;
 
-}
+	}
+	function unReserveAccount($transid,$reference,$utilityref,$msisdn,$amount){
+		$proceed = "OK";
+		$vendor = "TRANSSNET";
+		$service = "unReserveAccount";
+		$channel = "TPAY";
+		
+		// check if transaction exists
+		$chk_resp = $this->_checkTransaction($msisdn,$transid);
+		if($chk_resp['resultcode']=="000"){
+			//$reference = $reference;
+
+			$card_resp = $this->_get_card_info($msisdn);
+			
+			if($card_resp['resultcode']=="000"){
+				$info = $card_resp['info'];
+				
+				$masked_card = $info['masked_card'];
+				$name = $info['name'];
+				$dealer = 'Transsnet';//$info['dealer'];//check if Transsnet
+				$cardnum = $info['cardnum'];
+				$charge=0;
+
+				/*$settings = $this->_get_card_settings();
+
+				$setting_minbplimit= $settings['setting_minbplimit'];
+				$setting_maxbplimit= $settings['setting_maxbplimit'];
+				$setting_failcount = $settings['setting_failcount'];
+				$setting_minp2plimit = $settings['setting_minp2plimit'];
+				$setting_maxp2plimit = $settings['setting_maxp2plimit'];
+	*/
+				// save the transaction
+				$query = "INSERT INTO transaction (fulltimestamp, transid, reference, vendor, card, amount, initiate_ts, channel, utilitycode, name, msisdn, dealer, type, utilityref) VALUES (NOW(), '$transid', '$reference', '$vendor', '$masked_card', '0', NOW(), '$channel', '$service', '$name', '$msisdn', '$dealer', 'CREDIT', '$utilityref')";
+				$this->pdo_db->exec($query);
+				$trans_id = $this->pdo_db->lastInsertId();
+				
+
+				// load account settings
+				//$query = "SELECT balance, status, c2b, b2c, id, tariff, name FROM card.account WHERE utilitycode='P2P'";
+				$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
+				
+				$row = $this->pdo_db->query($query)->fetch();
+
+				$account_bal = $row['balance'];
+				$account_status = $row['status'];
+				$account_id = $row['id'];
+				$account_no = $row['accountNo'];
+				$account_name = $row['name'];
+				
+
+				$obal = $info['obal'];
+				
+				$failcount = $info['failcount'];
+				$active = $info['active'];
+				$status=$info['status'];
+				$stolen=$info['stolen'];
+				$ts = $info['ts'];
+				$id = $info['id'];
+				
+				$now = $info['now'];
+				$lasttrans = $info['lasttrans'];
+				$dailytrans = $info['dailytrans'];
+				$dailylimit = $info['dailylimit'];
+				
+				
+
+				//if (($account_status!="1") OR ($account_c2b!="1")) {
+				if (($account_status != 1) ) {
+					//die(print_r('account_status '.$account_status));
+					$result = "045";
+					$reply = "Account $account_name is closed";
+					$proceed="NOK";
+				}/*elseif ($failcount>=$setting_failcount) {
+					$result = "075";
+					$reply = "PIN tries exceeded";
+					$proceed="NOK";
+				}*/elseif($active!=0){
+					//die(print_r('active '.$active));
+					$result = "076";
+					$reply = "Card not activated";
+					$proceed="NOK";
+				}elseif($status!=1){
+					//die(print_r('status '.$status));					
+					$result = "045";
+					$reply = "Card blocked";
+					$proceed="NOK";
+				}/*elseif($stolen=="1"){
+					$result = "057";
+					$reply = "Lost or stolen card";
+					$proceed="NOK";
+				}elseif(($amount < $setting_minp2plimit) OR ($amount > $setting_maxp2plimit)) {
+					$reply = "Invalid amount";
+					$result = "013";
+					$proceed="NOK";
+				}*/elseif(($amount + $charge) > $obal) {
+					//die(print_r('status '.$amount + $charge.' : '.$obal));						
+					$result = '051';
+					$reply = "Insufficient funds";
+					$proceed="NOK";
+				}
+
+				if($proceed=="NOK"){
+					$resp['resultcode'] = $result;
+					$resp['result'] = $reply;
+
+					$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
+					$this->pdo_db->query($query);
+					
+
+					return $resp;
+				}
+				
+				$running = "0";
+
+				if($now==$lasttrans){
+					$running = $dailytrans + $amount + $charge;
+
+					if($running>$dailylimit){
+						$result = '065';
+						$reply = 'Transaction exceeds daily transaction limit';
+						$proceed = "NOK";
+					}
+				}else{
+					$running = $amount + $charge;
+				}
+	//transfer to msisdn
+	
+				if (strlen($utilityref)!=16){
+					if(strlen($utilityref)!=12){
+						if(strlen($utilityref)==10){
+							$utilityref = "255" . substr($utilityref, 1);
+						}
+					}
+				}
+				//has to have same card number
+				
+				if( $msisdn!=$utilityref){
+					$result = "057";
+					$reply = "Invalid destination account for releaseAccount transaction";
+					$proceed = "NOK";
+				
+					$resp['resultcode'] = $result;
+					$resp['result'] = $reply;
+
+					$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
+					$this->pdo_db->query($query);
+
+					return $resp;
+				}
+
+				// get destination card details
+			//$dest_card_resp = $card_resp; //$this->_get_card_info($utilityref);
+			
+			
+				/*if($dest_card_resp['resultcode']!="000"){
+					$result= "056";
+					$reply = "Destination card not found";
+					$proceed = "NOK";
+					$resp['resultcode'] = $result;
+					$resp['result'] = $reply;
+
+					return $resp;
+
+				}*/
+				//else{
+					
+					//$dest_info = $dest_card_resp['info'];
+					$dest_info = $card_resp['info'];
+
+					$dest_obal = $dest_info['obal'];
+					$dest_obal_format = $dest_info['obal_format'];
+					$dest_msisdn = $dest_info['msisdn'];
+					$dest_id = $dest_info['id'];
+					$dest_name = $dest_info['name'];
+					$dest_language = $dest_info['language'];
+					$dest_ts = $dest_info['ts'];
+					$dest_status = $dest_info['status'];
+					$dest_state = $dest_info['state'];
+					$dest_cardnum = $dest_info['cardnum'];
+					$dest_masked_card = $dest_info['masked_card'];
+					$dest_active = $dest_info['active'];
+
+					$dest_stolen = $dest_info['stolen'];
+					$dest_dailytrans = $dest_info['dailytrans'];
+					$dest_lasttrans = $dest_info['lasttrans'];
+					$dest_now = $dest_info['now'];
+					$dest_holdinglimit = $dest_info['holdinglimit'];
+					$dest_dailylimit = $dest_info['dailylimit'];
+					$dest_tier = $dest_info['tier'];
+
+					if($dest_status!=="1"){
+						$result = "045";
+						$reply = "Card ".$dest_masked_card." blocked";
+						$proceed = "NOK";
+					}elseif($dest_stolen=="1"){
+						$result = "057";
+						$reply = "Lost or stolen card $dest_masked_card";
+						$proceed = "NOK";
+					}
+
+					if($proceed=="NOK"){
+						$resp['resultcode'] = $result;
+						$resp['result'] = $reply;
+						
+						$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
+						$this->pdo_db->query($query);
+
+						return $resp;
+					}
+					
+					$dest_running = "0";
+
+					if($dest_now==$dest_lasttrans){
+						$dest_running = $dest_dailytrans + $amount;
+
+						if($dest_running>$dest_dailylimit){
+							$result = '065';
+							$reply = 'Transaction exceeds daily transaction limit for $dest_masked_card';
+							$proceed = "NOK";
+						}
+					}else{
+						$dest_running = $amount;
+					}
+				//}
+
+				/*if($proceed=="NOK"){
+					$response['resultcode'] = $result;
+					$response['result'] = $reply;
+
+					$query = "UPDATE transaction SET result='$result', message='$reply', complete_ts=NOW(),amount='$amount' WHERE id=$trans_id";
+					$this->pdo_db->query($query);
+				}else{*/
+					
+					// --Credit the account --
+					$cbal = $obal + $amount - $charge;
+					
+					$amount_format = number_format($amount, 0);
+					$charge_format = number_format($charge, 0);
+					$cbal_format = number_format($cbal, 0);
+
+					$reply = "Funds released of amount TZS $amount_format on $ts.";
+					
+					/*if($charge>0){
+						$reply .= " Transaction charge $charge_format.";
+					}*/
+
+					//$reply .=" Updated balance TZS $cbal_format. Reference $reference";
+					
+					/*$reply_arr=array();
+					$reply_arr['accountNo']=$id;
+					$reply_arr['balance']=$cbal;
+					$reply_arr['reference']=$reference;
+					$reply_arr['amount']=$amount;
+					$reply_arr['dated']=$ts;
+					$reply_arr['description']=$reply;
+					*/
+
+					$query = "UPDATE card SET obal=balance, cbal=(balance+$amount)-$charge, balance=(balance+$amount)-$charge, reference='$reference', last_transaction=NOW(), dailytrans='$running' WHERE id=$id";
+					$this->pdo_db->query($query);
+
+					$query = "UPDATE transaction SET result='000', message='$reply', complete_ts=NOW(), amount='$amount', obal='$obal', cbal='$cbal', charge='$charge', utilitycode='$service', utilityref='$utilityref' WHERE id=$trans_id";
+					$this->pdo_db->query($query);
+	//do not add to ledger
+					/*$query = "INSERT INTO ledger (fulltimestamp, vendor, card, transtype, transid, reference, amount, obal, cbal, charge, msisdn, channel, utilitycode, utilityref, name) VALUES (NOW(), '$vendor', '$masked_card', 'DEBIT', '$transid', '$reference', '$amount', '$obal', '$cbal', '$charge', '$msisdn', 'TPAY', '$service', '$utilityref', '$name')";
+					$this->pdo_db->query($query);
+					*/// no charges for TPAY
+					//$query = "UPDATE card.account SET charge=charge+$charge WHERE id=$account_id"; /*update accountprofile? but there is no charges*/
+					//$this->pdo_db->query($query);
+
+					//update sender profile
+					$query = "UPDATE accountprofile SET balance=(balance+$amount)-$charge, lastupdated=NOW()  WHERE accountNo=$id";
+					$this->pdo_db->query($query);
+
+					$tmp["date"] = $ts;
+					$tmp["biller"] = $service; //  company name
+					$tmp["amount"] = $amount;
+					$tmp["charge"] = $charge;
+					//$response['result']=$reply;
+					$response['txn'] = $tmp;
+					$response['resultcode'] = "000";
+					//---
+
+					// --- Debit suspense  ---
+					$dest_cbal = $dest_obal + $amount;
+
+					$amout_format = number_format($amount, 0);
+					$dest_cbal_format = number_format($dest_cbal, 0);
+
+					$dest_reply = "Your account has been released of TZS $amount_format on $ts. Updated balance TZS $cbal_format. Reference $reference";
+
+					$query = "UPDATE card SET /*obal=balance, cbal=balance+$amount,*/ suspense=suspense-$amount, last_transaction=NOW(), dailytrans='$dest_running' WHERE id=$dest_id";
+					$this->pdo_db->query($query);
+
+					//do not enter into ledger as its not a complete transaction only reservation
+
+					/*$query = "INSERT INTO ledger (fulltimestamp, vendor, card, transtype, transid, reference, amount, obal, cbal, charge, msisdn, channel, utilitycode, utilityref, name) VALUES (NOW(), '$vendor', '$dest_masked_card', 'CREDIT', '$transid', '$reference', '$amount', '$dest_obal', '$dest_cbal', '0', '$dest_msisdn', 'USSD', '$service', '$utilityref', '$name')";
+					$this->pdo_db->query($query);
+					*/
+
+					
+
+					//update destination profile noupdating balance on profile
+					//$dest_query = "UPDATE accountprofile SET balance=balance+$amount, lastupdated=NOW()  WHERE accountNo=$dest_id";
+					//$this->pdo_db->query($dest_query);
+
+					// send sms (if has app, send notification)
+					// send_sms( $msisdn, $reply);
+					// send_sms( $dest_msisdn, $dest_reply);
+
+					/*$id = $this->createNotification($msisdn,$reply,"INFO");
+					$this->sendNotification($msisdn,$reply, $id);
+					$this->sendNotification($dest_msisdn,$dest_reply, $id);
+					//--
+					*/
+					$dest_reply_arr=array();
+					$dest_reply_arr['accountNo']=$id;
+					$dest_reply_arr['balance']=$cbal;
+					$dest_reply_arr['reference']=$reference;
+					$dest_reply_arr['amount']=$amount;
+					$dest_reply_arr['dated']=$ts;
+					$dest_reply_arr['description']=$dest_reply;
+					//die(print_r($reply_arr . ' '.$dest_reply_arr));
+					//$resp['reserver']=$reply_arr;
+					$resp['release']=$dest_reply_arr;
+					return $resp;
+
+				//}
+
+
+			} else {
+				$response = $card_resp;
+			}
+		}
+		else {
+			$response = $chk_resp;
+		}
+
+		return $response;
+
+	}
 }
 ?>
