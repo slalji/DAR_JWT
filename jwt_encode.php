@@ -16,32 +16,47 @@ include_once('vendor\custom\JWT.php');
 include_once('vendor\custom\members.php');
 include_once('config.php');
 
-$request = $_REQUEST;
-
-if (isset($request)) {
+/**
+ *
+ * PHP version 5
+ *
+ * @modal DB
+ * @author   Salma Lalji
+ **/
  
-    $txtHeader = array();
-    $txtHeader["alg"]="RS256";
-    $txtHeader["typ"]="JWT";
-    $txtHeader["iss"]="Selcom Transsnet";
-    $txtHeader["sub"]="selcom@transsnet.net";
-    $txtHeader["aud"]="https://transset.selcom.net";
-    $txtHeader["exp"]="24h";//(',: ,"iss"="Selcom Transsnet","sub":"selcom@transsnet.net","aud":"https://transset.selcom.net", "exp":"24h"}');
-    $txtPayload = (json_decode(file_get_contents('php://input')));
-   
-    $privateKey = file_get_contents('./private.txt', true);
-    //print_r($privateKey);
-    $res = openssl_pkey_get_private($privateKey); 
-    $secretKey = openssl_pkey_get_details($res); 
-  
-    $jwt = JWT::encode($txtPayload, $privateKey, "RS256",$txtHeader);
-    print_r($jwt);
+class Token {
+    public function __construct() {
+    }
+    public function sign($txtPayload){
+       
 
-    
+        if (isset($request)) {
+        
+            $txtHeader = array();
+            $txtHeader["alg"]="RS256";
+            $txtHeader["typ"]="JWT";
+            $txtHeader["iss"]="Selcom Transsnet";
+            $txtHeader["sub"]="selcom@transsnet.net";
+            $txtHeader["aud"]="selcomTransnet";
+            $txtHeader["exp"]="24h";
+            
+        
+            $privateKey = file_get_contents('./private.txt', true);
+            //print_r($privateKey);
+            $res = openssl_pkey_get_private($privateKey); 
+            $secretKey = openssl_pkey_get_details($res); 
+        
+            $jwt = JWT::encode($txtPayload, $privateKey, "RS256",$txtHeader);
+            print_r($jwt);
+            return $jwt;
+
+            
+        }
+        else{
+            header('HTTP/1.0 400 Bad Request');
+            echo('HTTP/1.0 400 Bad Request' );
+        } 
+    }
 }
-else{
-    header('HTTP/1.0 400 Bad Request');
-    echo('HTTP/1.0 400 Bad Request' );
-} 
 
 ?>
