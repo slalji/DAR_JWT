@@ -276,7 +276,7 @@ class Validate
     }
     public static function updateAccount($payload) {
         $err = array();
-        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+        if (!isset($payload->customerNo) || empty($payload->customerNo)) {
             $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
@@ -381,6 +381,22 @@ class Validate
     
         return ($err);
     }
+    public static function reserveAccount($payload) {
+        $err = array();
+        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return $err[]='customerNo or msisdn may not be empty';
+        }
+        
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        if (!isset($payload->amount) || empty($payload->amount)) {
+            $err[]='amount may not be empty';
+        }
+        
+        return ($data);
+    }
     public static function unReserveAccount($payload) {
         $err = array();
         if (!isset($payload->customerNo) || empty($payload->customerNo)) 
@@ -407,6 +423,58 @@ class Validate
     
         return ($data);
     }
+    public static function payUtility($payload)    {
+        $err = array();
+        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return $err[]='customerNo or msisdn may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        if (!isset($payload->utilitycode) || empty($payload->utilitycode)) {
+            $err[]='utilitycode may not be empty';
+        }        
+        if (!isset($payload->utilityref) || empty($payload->utilityref)) {
+            $err[]='utilityref may not be empty';
+        }
+        if (!isset($payload->amount) || empty($payload->amount)) {
+            $err[]='amount may not be empty';
+        }
+        if (!isset($payload->currency) || empty($payload->currency)) {
+            $err[]='currency may not be empty';
+        }
+      
+        
+        
+        $data = isset($err) ? $err :false;
+    
+        return ($err);
+    } 
+    public static function cashin($payload)    {
+        $err = array();
+        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return $err[]='customerNo or msisdn may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        
+        if (!isset($payload->amount) || empty($payload->amount)) {
+            $err[]='amount may not be empty';
+        }
+        if (!isset($payload->currency) || empty($payload->currency)) {
+            $err[]='currency may not be empty';
+        }
+      
+        
+        
+        $data = isset($err) ? $err :false;
+    
+        return ($err);
+    }
+
     
 
 

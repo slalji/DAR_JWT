@@ -312,7 +312,7 @@ class Transactions
         
         
     }
-    public function _checkDupTrans($transid){
+    /*public function _checkDupTrans($transid){
         $message = array();
         $message['resultcode']="002";
         $message['result']="Duplicate request";
@@ -326,11 +326,10 @@ class Transactions
         }
             
         else 
-            return false;
-
-            
+            return false;           
            
     }
+    */
     public function openAccount($data)   {
         //check for required fields eg accountNo, msisdn, fname lname
         $err = Validate::openAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
@@ -376,8 +375,9 @@ class Transactions
         return (json_encode($respArray));
     }
     public function updateAccount($data)   {
-        //check for required fields eg accountNo, transid, fname lname
-        //Validate::openAccount($data);
+        $err = Validate::updateAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
+        if (!empty($err))
+            return DB::getErrorResponse($data, $err, $this->reference);
 
         $payload = (array)$data;
         $tier = strtoupper(isset($payload['tier'])?$payload['tier']:$payload['']);
@@ -458,9 +458,9 @@ class Transactions
     }
     public function transactionLookup($data)   {
         //check for required fields eg transid return accountprofile info of this transid 
-        Validate::transactionLookup($data);
-        //add to transaction
-        //update table card balance =+ amount
+        $err = Validate::transactionLookup($data);
+        if (!empty($err))
+            return DB::getErrorResponse($data, $err, $this->reference);
         $payload = (array)$data;    
        
        
@@ -694,11 +694,11 @@ class Transactions
    
     public function cashin($data){
         //check for required fields eg transid return accountprofile info of this transid 
-       /*$err = Validate::accountState($data);
+       $err = Validate::cashin($data);
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);        
         $payload = (array)$data; 
-        */ 
+        
                  
         $payload = (array)$data;
         $payload['reference']=$this->reference;  
@@ -742,11 +742,11 @@ class Transactions
     }
     public function payUtility($data){
         //check for required fields eg transid return accountprofile info of this transid 
-       /*$err = Validate::payUtility($data);
+       $err = Validate::payUtility($data);
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);        
         $payload = (array)$data; 
-        */ 
+        
                  
         $payload = (array)$data;
         $payload['reference']=$this->reference;  
@@ -791,10 +791,10 @@ class Transactions
     public function reserveAmount($data)   {
         //check for required fields eg transid return accountprofile info of this transid 
         
-       /* $err = Validate::reserveAmount($data);
+       $err = Validate::reserveAmount($data);
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);
-         */
+        
         $payload = (array)$data;
         $ref=$this->reference;  
         $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
