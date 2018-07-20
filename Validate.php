@@ -182,6 +182,48 @@ class Validate
                  
            
     }
+    public static function setTinfo($payload){
+       
+        //get accountNo;
+        $db = new DB();
+        $arr =array();
+        $col =null;
+        $value =null;          
+        
+         
+        try{         
+            $arr['transid'] = isset($payload['transid'])?$payload['transid']:'';
+            $arr['reference'] = isset($payload['reference'])?$payload['reference']:'';
+            $arr['transtype'] = isset($payload['transtype'])?$payload['transtype']:'';
+            $arr['geocode'] = isset($payload['geocode'])?json_encode($payload['geocode']):'';
+            $arr['generateVoucher'] = isset($payload['generateVoucher'])?$payload['generateVoucher']:'';
+            $arr['redeemVoucher'] = isset($payload['redeemVoucher'])?$payload['redeemVoucher']:'';
+            foreach($arr as $key => $val){
+                if ($val){
+                    $col.=$key .',';
+                    $value.="'".$val."'".',';
+                }
+                
+            }
+            $col = rtrim($col,',');
+            $value = rtrim($value,',');
+            $sql ="INSERT INTO tinfo ($col) VALUES ($value)";
+            
+            $stmt = $db->conn->prepare( $sql );
+            $stmt->execute();
+           
+            unset($payload['transtype']);   
+            unset($payload['geocode']);   
+            unset($payload['generateVoucher']);   
+            unset($payload['redeemVoucher']);          
+            return $payload;
+        }
+        catch (Exception $e) {
+            die(print_r($e->getMessage()));
+            return false;
+        }     
+           
+    }
     public static function checkTransid($transid){
        
         $data = isset($err) ? $err :false;
