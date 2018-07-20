@@ -111,7 +111,7 @@ class Validate
     }
     public static function check($acctNo){
         $db = new DB();
-        $sql ="select id from accountProfile where cardNo='".$acctNo."'";
+        $sql ="select id from accountProfile where accountNo='".$acctNo."'";
         $stmt = $db->conn->prepare( $sql );                     
         $stmt->execute();
         if ($stmt->rowCount() > 0)
@@ -121,7 +121,7 @@ class Validate
     }
     public static function _getAccountNo($customerNo){
         $db = new DB();
-        $sql ="select cardNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
+        $sql ="select accountNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
 
         $stmt = $db->conn->prepare( $sql );
         $stmt->execute();            
@@ -130,11 +130,11 @@ class Validate
            
     }
     public static function _getSuspense($customerNo){
-        //get cardNo;
+        //get accountNo;
         $db = new DB();
-        $cardNo = Validate::_getAccountNo($customerNo);
+        $accountNo = Validate::_getAccountNo($customerNo);
 
-        $sql ="select suspense from card where id ='$cardNo'";  
+        $sql ="select suspense from card where id ='$accountNo'";  
 
         $stmt = $db->conn->prepare( $sql );
         $stmt->execute();            
@@ -143,11 +143,11 @@ class Validate
            
     }
     public static function _checkRef($payload){
-        //get cardNo;
+        //get accountNo;
         $db = new DB();
         //$customerNo = $payload['customerNo'];
         $ref = $payload->reference;
-       // $cardNo = Validate::_getAccountNo($customerNo);
+       // $accountNo = Validate::_getAccountNo($customerNo);
        $flag=false;
         try{
            
@@ -184,7 +184,7 @@ class Validate
     }
     public static function setTinfo($payload){
        
-        //get cardNo;
+        //get accountNo;
         $db = new DB();
         $arr =array();
         $col =null;
@@ -278,7 +278,7 @@ class Validate
     public static function updateAccount($payload) {
         $err = array();
         if (!isset($payload->customerNo) || empty($payload->customerNo)) {
-            $err[]='cardNo may not be empty';
+            $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -307,8 +307,8 @@ class Validate
     }
     public static function transactionLookup($payload){
         $err = array();
-        if (!isset($payload->cardNo) || empty($payload->cardNo)) {
-            $err[]='cardNo may not be empty';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -473,6 +473,33 @@ class Validate
       
         
         
+        $data = isset($err) ? $err :false;
+    
+        return ($data);
+    }
+    public static function linkAccount($payload)    {
+        $err = array();
+        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return $err[]='customerNo or msisdn may not be empty';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+        
+        if (!isset($payload->bankname) || empty($payload->bankname)) {
+            $err[]='bank name may not be empty';
+        }
+        if (!isset($payload->bankbranch) || empty($payload->bankbranch)) {
+            $err[]='bank branch name may not be empty';
+        }
+        if (!isset($payload->bankaccountname) || empty($payload->bankaccountname)) {
+            $err[]='bank account name may not be empty';
+        }
+        if (!isset($payload->bankaccountnumber) || empty($payload->bankaccountnumber)) {
+            $err[]='bank account number may not be empty';
+        } 
+
         $data = isset($err) ? $err :false;
     
         return ($data);

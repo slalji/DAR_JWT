@@ -127,8 +127,8 @@ class DB extends PDO {
             case 'reserveAccount': print_r( $transaction->reserveAccount($data)); break;
             case 'unReserveAccount': print_r( $transaction->unReserveAccount($data)); break;
             case 'changeStatus': print_r( $transaction->updateAccountStatus($data)); break;
-            case 'requestCard': print_r( $transaction->requestCard($data)); break; //requestVNC
-            case 'reversal': print_r( $transaction->Reversal($data)); break;
+            case 'linkAccount': print_r( $transaction->linkAccount($data)); break; //requestVNC
+            case 'unLinkAccount': print_r( $transaction->unLinkAccount($data)); break;
             case 'exGratiaPayments': print_r( $transaction->ExGratiaPayments($data)); break;
             case 'checkBalance': print_r( $transaction->checkBalance($data)); break;
             case 'getStatement': print_r( $transaction->getStatement($data)); break;
