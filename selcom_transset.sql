@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `accountprofile` (
   `lastName` varchar(60) NOT NULL,
   `gender` varchar(10) DEFAULT NULL,
   `customerNo` varchar(100) NOT NULL,
-  `accountNo` varchar(60) NOT NULL,
+  `cardNo` varchar(60) NOT NULL,
   `msisdn` varchar(12) NOT NULL,
   `email` varchar(100) DEFAULT NULL,
   `status` varchar(1) NOT NULL DEFAULT '0',
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `accountprofile` (
 -- Dumping data for table `accountprofile`
 --
 
-INSERT INTO `accountprofile` (`id`, `firstName`, `lastName`, `gender`, `customerNo`, `accountNo`, `msisdn`, `email`, `status`, `addressLine1`, `addressCity`, `addressCountry`, `dob`, `currency`, `state`, `active`, `nationality`, `balance`) VALUES
+INSERT INTO `accountprofile` (`id`, `firstName`, `lastName`, `gender`, `customerNo`, `cardNo`, `msisdn`, `email`, `status`, `addressLine1`, `addressCity`, `addressCountry`, `dob`, `currency`, `state`, `active`, `nationality`, `balance`) VALUES
 (1, 'John', 'Doe', '', '255789654555', '', '255789654555', '', '1', '', 'Dar', '', '1978-06-15', 'TZS', 'ON', '0', '', 0),
 (2, 'Salma', 'Kanji Lalji', '', '255789654700', '', '255789654700', '', '1', '', 'Mbeya', '', '1997-01-10', 'TZS', 'ON', '0', '', 0);
 

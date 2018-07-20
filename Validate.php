@@ -49,7 +49,7 @@ class Validate
         }
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
     
     public static function verify($headers){
@@ -111,7 +111,7 @@ class Validate
     }
     public static function check($acctNo){
         $db = new DB();
-        $sql ="select id from accountProfile where accountNo='".$acctNo."'";
+        $sql ="select id from accountProfile where cardNo='".$acctNo."'";
         $stmt = $db->conn->prepare( $sql );                     
         $stmt->execute();
         if ($stmt->rowCount() > 0)
@@ -121,7 +121,7 @@ class Validate
     }
     public static function _getAccountNo($customerNo){
         $db = new DB();
-        $sql ="select accountNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
+        $sql ="select cardNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
 
         $stmt = $db->conn->prepare( $sql );
         $stmt->execute();            
@@ -130,11 +130,11 @@ class Validate
            
     }
     public static function _getSuspense($customerNo){
-        //get accountNo;
+        //get cardNo;
         $db = new DB();
-        $accountNo = Validate::_getAccountNo($customerNo);
+        $cardNo = Validate::_getAccountNo($customerNo);
 
-        $sql ="select suspense from card where id ='$accountNo'";  
+        $sql ="select suspense from card where id ='$cardNo'";  
 
         $stmt = $db->conn->prepare( $sql );
         $stmt->execute();            
@@ -143,11 +143,11 @@ class Validate
            
     }
     public static function _checkRef($payload){
-        //get accountNo;
+        //get cardNo;
         $db = new DB();
         //$customerNo = $payload['customerNo'];
         $ref = $payload->reference;
-       // $accountNo = Validate::_getAccountNo($customerNo);
+       // $cardNo = Validate::_getAccountNo($customerNo);
        $flag=false;
         try{
            
@@ -184,7 +184,7 @@ class Validate
     }
     public static function setTinfo($payload){
        
-        //get accountNo;
+        //get cardNo;
         $db = new DB();
         $arr =array();
         $col =null;
@@ -260,7 +260,7 @@ class Validate
                 $err[]='msisdn may not be empty';
             }             
             
-            $data = isset($err) ? $err :false;
+           
             $db = new DB();
             $sql ="select id from accountProfile where customerNo='".$payload->customerNo."'";
             $stmt = $db->conn->prepare( $sql );                     
@@ -272,12 +272,13 @@ class Validate
         catch(Exception $e){
             $err[]= $e->getMessage();
         }
-        return ($err);
+        $data = isset($err) ? $err :false;
+        return ($data);
     }
     public static function updateAccount($payload) {
         $err = array();
         if (!isset($payload->customerNo) || empty($payload->customerNo)) {
-            $err[]='accountNo may not be empty';
+            $err[]='cardNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -285,7 +286,7 @@ class Validate
        
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
     public static function nameLookup($payload) {
         $err = array();
@@ -302,12 +303,12 @@ class Validate
         */
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
     public static function transactionLookup($payload){
         $err = array();
-        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
-            $err[]='accountNo may not be empty';
+        if (!isset($payload->cardNo) || empty($payload->cardNo)) {
+            $err[]='cardNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -318,7 +319,7 @@ class Validate
         
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
     public static function transferFunds($payload)    {
         $err = array();
@@ -342,7 +343,7 @@ class Validate
         
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
     public static function enquiry($payload) {
         $err = array();
@@ -359,7 +360,7 @@ class Validate
         */
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
     public static function accountState($payload) {
         $err = array();
@@ -379,7 +380,7 @@ class Validate
         */
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
     public static function reserveAccount($payload) {
         $err = array();
@@ -394,8 +395,10 @@ class Validate
         if (!isset($payload->amount) || empty($payload->amount)) {
             $err[]='amount may not be empty';
         }
-        
+        $data = isset($err) ? $err :false;
+    
         return ($data);
+       
     }
     public static function unReserveAccount($payload) {
         $err = array();
@@ -449,7 +452,7 @@ class Validate
         
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     } 
     public static function cashin($payload)    {
         $err = array();
@@ -472,7 +475,7 @@ class Validate
         
         $data = isset($err) ? $err :false;
     
-        return ($err);
+        return ($data);
     }
 
     

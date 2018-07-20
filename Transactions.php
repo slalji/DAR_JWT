@@ -49,7 +49,7 @@ class Transactions
             $arr = rtrim($arr,', ');
            
              
-            $sql ="UPDATE accountprofile SET $arr where accountNo = '".$customer."'";
+            $sql ="UPDATE accountprofile SET $arr where cardNo = '".$customer."'";
                         
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);             
@@ -73,7 +73,7 @@ class Transactions
         $profile['lastName']=isset($data['lastName'])?$data['lastName']:'';
         $profile['gender']=isset($data['gender'])?$data['gender']:'';
         $profile['customerNo']=isset($data['customerNo'])?$data['customerNo']:'';
-        $profile['accountNo']=isset($data['card'])?$data['accountNo']:'';
+        $profile['cardNo']=isset($data['card'])?$data['cardNo']:'';
         $profile['msisdn']=isset($data['msisdn'])?$data['msisdn']:'';
         $profile['email']=isset($data['email'])?$data['email']:'';
         $profile['status']=isset($data['status'])?$data['status']:0;
@@ -121,7 +121,7 @@ class Transactions
     }
     public function _getAccountNo($customerNo){
         
-        $sql ="select accountNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
+        $sql ="select cardNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";  
 
         $stmt = $this->conn->prepare( $sql );
         $stmt->execute();            
@@ -130,11 +130,11 @@ class Transactions
            
     }
     public function _getSuspense($customerNo){
-        //get accountNo;
+        //get cardNo;
         
-        $accountNo = $this->_getAccountNo($customerNo);
+        $cardNo = $this->_getAccountNo($customerNo);
 
-        $sql ="select suspense from card where id ='$accountNo'";  
+        $sql ="select suspense from card where id ='$cardNo'";  
 
         $stmt = $this->conn->prepare( $sql );
         $stmt->execute();            
@@ -142,9 +142,9 @@ class Transactions
         return $result;           
            
     }
-    public function _getProfile($accountNo){
+    public function _getProfile($cardNo){
         
-        $sql ="select * from accountProfile where accountNo ='$accountNo' ";  
+        $sql ="select * from accountProfile where cardNo ='$cardNo' ";  
 
         $stmt = $this->conn->prepare( $sql );
         $stmt->execute();            
@@ -331,14 +331,14 @@ class Transactions
     }
     */
     public function openAccount($data)   {
-        //check for required fields eg accountNo, msisdn, fname lname
+        //check for required fields eg cardNo, msisdn, fname lname
         $err = Validate::openAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);
         try{
 
             $payload = (array)$data;    
-            $payload['accountNo'] = 'TPAY'.DB::getToken(12);       
+            $payload['cardNo'] = 'TPAY'.DB::getToken(12);       
             $dob=DB::toDate($payload['dob']);                        
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');            
@@ -353,7 +353,7 @@ class Transactions
             
             //add to transactions DB
             //$this->addTransaction($payload);
-            $payload['accountNo'] = $last_id;
+            $payload['cardNo'] = $last_id;
             //add to accountProfile DB
             $this->_addAccountProfile($payload);
             $message = array();
@@ -384,7 +384,7 @@ class Transactions
        
         //update accountProfile DB
         $customer = $this->_updateAccountProfile($payload);
-        $payload['accountNo']=$customer;
+        $payload['cardNo']=$customer;
         if(isset($tier)){
         
             switch($tier){
@@ -537,13 +537,14 @@ class Transactions
 
             $selcom = new DbHandler();
             $result = $selcom->fundTransfer($payload['transid'],$payload['reference'],$payload['utilityref'], $payload['msisdn'],$payload['amount']);
+            
+                $message = array();
+                $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
+                $message['method']="transferFunds";
+                $message['data']=$result;
+                $code = $result['resultcode'] =='000'?200:501;
 
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="transferFunds";
-            $message['data']=$result;
-
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => $code, "Message"=>($message)];
         
         }
         catch (Exception $e) {
@@ -583,11 +584,12 @@ class Transactions
             }
             
             $message = array();
-            $message['status']="SUCCESS";
+            $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="checkBalance";
             $message['data']=$payload;
+            $code = $result['resultcode'] =='000'?200:501;
 
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => $code, "Message"=>($message)];
         
         }
         catch (Exception $e) {
@@ -629,11 +631,12 @@ class Transactions
             }
             
             $message = array();
-            $message['status']="SUCCESS";
+            $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="getStatement";
             $message['data']=$payload;
+            $code = $result['resultcode'] =='000'?200:501;
 
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' =>  $code, "Message"=>($message)];
         
         }
         catch (Exception $e) {
@@ -659,12 +662,12 @@ class Transactions
         $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
         $customer = $this->_getAccountNo($account);
         $active = isset($payload['status']) && $payload['status'] === 'open'?'0':'1';
-        $payload['accountNo']=$customer;
+        $payload['cardNo']=$customer;
         unset( $payload['transid']);
                    
         try{
             $sql = "UPDATE card SET active='".$active."' where id='".$customer."'; ";
-            $sql2 =" UPDATE accountprofile SET active='".$active."' where accountNo='".$customer."'";
+            $sql2 =" UPDATE accountprofile SET active='".$active."' where cardNo='".$customer."'";
             
             $stmt = $this->conn->query($sql);
             $stmt = $this->conn->query($sql2);
@@ -712,7 +715,7 @@ class Transactions
         $msisdn = $payload['msisdn'];   
         
 
-        $payload['accountNo']=$customer;
+        $payload['cardNo']=$customer;
         unset( $payload['transid']);
                    
         try{
@@ -722,11 +725,12 @@ class Transactions
            
 
             $message = array();
-            $message['status']="SUCCESS";
+            $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="cashin";
             $message['data']=$result;
+            $code = $result['resultcode'] =='000'?200:501;
 
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' =>  $code, "Message"=>($message)];
         
            
 
@@ -760,7 +764,7 @@ class Transactions
         $transid = $payload['transid'];
         $msisdn = $payload['msisdn'];
 
-        $payload['accountNo']=$customer;
+        $payload['cardNo']=$customer;
         unset( $payload['transid']);
                    
         try{
@@ -770,11 +774,12 @@ class Transactions
            
 
             $message = array();
-            $message['status']="SUCCESS";
+            $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="payUtility";
             $message['data']=$result;
+            $code = $result['resultcode'] =='000'?200:501;
 
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' =>  $code, "Message"=>($message)];
         
            
 
@@ -788,10 +793,10 @@ class Transactions
         }
         return json_encode($respArray);
     }
-    public function reserveAmount($data)   {
+    public function reserveAccount($data)   {
         //check for required fields eg transid return accountprofile info of this transid 
         
-       $err = Validate::reserveAmount($data);
+       $err = Validate::reserveAccount($data);
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);
         
@@ -816,11 +821,12 @@ class Transactions
             $selcom = new DbHandler();
             */
             $message = array();
-            $message['status']="SUCCESS";
+            $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="reserveAmount";
             $message['data']=$result;
+            $code = $result['resultcode'] =='000'?200:501;
             
-            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 200, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' =>  $code, "Message"=>($message)];
         }
         catch (Exception $e) {
             
@@ -854,11 +860,12 @@ class Transactions
             $result = $selcom->unReserveAccount($transid,$ref,$utilityref,$msisdn,$amount);
 
             $message = array();
-            $message['status']="SUCCESS";
+            $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="unReserveAccount";
             $message['data']=$result;
+            $code = $result['resultcode'] =='000'?200:501;
             
-            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 200, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' =>  $code, "Message"=>($message)];
         }
         catch (Exception $e) {
             

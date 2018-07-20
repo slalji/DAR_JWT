@@ -1812,7 +1812,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 
 				// load account settings
 				//$query = "SELECT balance, status, c2b, b2c, id, tariff, name FROM card.account WHERE utilitycode='P2P'";
-				$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
+				$query = "SELECT id, balance, status, cardNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
 				
 				$row = $this->pdo_db->query($query)->fetch();
 				if (empty($row)){
@@ -1830,7 +1830,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 				//die(print_r('account_status '.$account_status.' : '.$row['status']));
 				//$account_c2b = $row['c2b'];
 				$account_id = $row['id'];
-				$account_no = $row['accountNo'];
+				$account_no = $row['cardNo'];
 				//$account_tariff = $row['tariff'];
 				$account_name = $row['name'];
 				
@@ -2051,7 +2051,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					$reply .=" Updated balance TZS $cbal_format. Reference $reference";
 					
 					$reply_arr=array();
-					$reply_arr['accountNo']=$id;
+					$reply_arr['cardNo']=$id;
 					$reply_arr['balance']=$cbal;
 					$reply_arr['reference']=$reference;
 					$reply_arr['amount']=$amount;
@@ -2072,7 +2072,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					//$this->pdo_db->query($query);
 
 					//update sender profile
-					$query = "UPDATE accountprofile SET balance=balance-$amount-$charge, lastupdated=NOW()  WHERE accountNo=$id";
+					$query = "UPDATE accountprofile SET balance=balance-$amount-$charge, lastupdated=NOW()  WHERE cardNo=$id";
 					$this->pdo_db->query($query);
 
 					$tmp["date"] = $ts;
@@ -2101,7 +2101,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					
 
 					//update destination profile
-					$dest_query = "UPDATE accountprofile SET balance=balance+$amount, lastupdated=NOW()  WHERE accountNo=$dest_id";
+					$dest_query = "UPDATE accountprofile SET balance=balance+$amount, lastupdated=NOW()  WHERE cardNo=$dest_id";
 					$this->pdo_db->query($dest_query);
 
 					// send sms (if has app, send notification)
@@ -2114,7 +2114,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					//--
 					*/
 					$dest_reply_arr=array();
-					$dest_reply_arr['accountNo']=$dest_id;
+					$dest_reply_arr['cardNo']=$dest_id;
 					$dest_reply_arr['balance']=$dest_cbal;
 					$dest_reply_arr['reference']=$reference;
 					$dest_reply_arr['amount']=$amount;
@@ -2471,14 +2471,14 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 
 				// load account settings
 				//$query = "SELECT balance, status, c2b, b2c, id, tariff, name FROM card.account WHERE utilitycode='P2P'";
-				$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
+				$query = "SELECT id, balance, status, cardNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
 				
 				$row = $this->pdo_db->query($query)->fetch();
 
 				$account_bal = $row['balance'];
 				$account_status = $row['status'];
 				$account_id = $row['id'];
-				$account_no = $row['accountNo'];
+				$account_no = $row['cardNo'];
 				$account_name = $row['name'];
 				
 
@@ -2610,7 +2610,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					//$this->pdo_db->query($query);
 
 					//update account profile
-					$query = "UPDATE accountprofile SET balance=balance-$amount-$charge, lastupdated=NOW()  WHERE accountNo=$id";
+					$query = "UPDATE accountprofile SET balance=balance-$amount-$charge, lastupdated=NOW()  WHERE cardNo=$id";
 					$this->pdo_db->query($query);
 
 					$tmp["date"] = $ts;
@@ -2642,7 +2642,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					
 
 					//update destination profile
-					$dest_query = "UPDATE accountprofile SET balance=balance+$amount, lastupdated=NOW()  WHERE accountNo=$id";
+					$dest_query = "UPDATE accountprofile SET balance=balance+$amount, lastupdated=NOW()  WHERE cardNo=$id";
 					$this->pdo_db->query($dest_query);
 
 					// send sms (if has app, send notification)
@@ -2655,7 +2655,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					//--
 					*/
 					$dest_reply_arr=array();
-					$dest_reply_arr['accountNo']=$id;
+					$dest_reply_arr['cardNo']=$id;
 					$dest_reply_arr['balance']=$cbal;
 					$dest_reply_arr['reference']=$reference;
 					$dest_reply_arr['amount']=$amount;
@@ -2712,14 +2712,14 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 
 				// load account settings
 				//$query = "SELECT balance, status, c2b, b2c, id, tariff, name FROM card.account WHERE utilitycode='P2P'";
-				$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
+				$query = "SELECT id, balance, status, cardNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$utilityref";
 				
 				$row = $this->pdo_db->query($query)->fetch();
 
 				$account_bal = $row['balance'];
 				$account_status = $row['status'];
 				$account_id = $row['id'];
-				$account_no = $row['accountNo'];
+				$account_no = $row['cardNo'];
 				$account_name = $row['name'];
 				
 
@@ -2848,7 +2848,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					//$this->pdo_db->query($query);
 
 					//update account profile
-					$query = "UPDATE accountprofile SET balance=(balance+$amount)-$charge, lastupdated=NOW()  WHERE accountNo=$id";
+					$query = "UPDATE accountprofile SET balance=(balance+$amount)-$charge, lastupdated=NOW()  WHERE cardNo=$id";
 					$this->pdo_db->query($query);
 
 					$tmp["date"] = $ts;
@@ -2861,14 +2861,14 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					//---
 
 					// --- Debit suspense  ---
-					$dest_cbal = $dest_obal + $amount;
+					$dest_cbal = $obal + $amount;
 
 					$amout_format = number_format($amount, 0);
 					$dest_cbal_format = number_format($dest_cbal, 0);
 
 					$dest_reply = "Your account has been released of TZS $amount_format on $ts. Updated balance TZS $cbal_format. Reference $reference";
 
-					$query = "UPDATE card SET /*obal=balance, cbal=balance+$amount,*/ suspense=suspense-$amount, last_transaction=NOW(), dailytrans='$dest_running' WHERE id=$dest_id";
+					$query = "UPDATE card SET /*obal=balance, cbal=balance+$amount,*/ suspense=suspense-$amount, last_transaction=NOW(), dailytrans='$running' WHERE id=$id";
 					$this->pdo_db->query($query);
 
 					//do not enter into ledger as its not a complete transaction only reservation
@@ -2878,7 +2878,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 					*/
 
 					$dest_reply_arr=array();
-					$dest_reply_arr['accountNo']=$id;
+					$dest_reply_arr['cardNo']=$id;
 					$dest_reply_arr['balance']=$cbal;
 					$dest_reply_arr['reference']=$reference;
 					$dest_reply_arr['amount']=$amount;
