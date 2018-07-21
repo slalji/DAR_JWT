@@ -25,12 +25,10 @@ include_once('config.php');
  **/
  
 class Token {
-    public function __construct() {
-    }
-    public function sign($txtPayload){
+    
+    public static function sign($txtPayload){
        
-
-        if (isset($request)) {
+        if (isset($txtPayload)) {
         
             $txtHeader = array();
             $txtHeader["alg"]="RS256";
@@ -42,19 +40,19 @@ class Token {
             
         
             $privateKey = file_get_contents('./private.txt', true);
-            //print_r($privateKey);
+           
             $res = openssl_pkey_get_private($privateKey); 
             $secretKey = openssl_pkey_get_details($res); 
         
             $jwt = JWT::encode($txtPayload, $privateKey, "RS256",$txtHeader);
-            print_r($jwt);
+            //print_r($jwt);
             return $jwt;
 
             
         }
         else{
             header('HTTP/1.0 400 Bad Request');
-            echo('HTTP/1.0 400 Bad Request' );
+            echo('HTTP/1.0 400 Bad Request'.($txtPayload) );
         } 
     }
 }

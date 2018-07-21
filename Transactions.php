@@ -219,6 +219,7 @@ class Transactions
 
 		// generate sms code
         $request = (array)$data;
+       
         $payload = array();
         $payload['fulltimestamp'] = $request['fulltimestamp'];
         $payload['name'] = $request['firstName']. ' '.$request['lastName'];
@@ -239,6 +240,7 @@ class Transactions
        
         $cols = null;
         $vals = null;
+        $sql =null;
         try{
             
             foreach($payload as $key => $val){
@@ -251,7 +253,8 @@ class Transactions
             
             $sql ="INSERT INTO card (".$cols.") VALUES (".$vals.")";
             $stmt = $this->conn->prepare( $sql );
-            $state = $this->_pdoBindArray($stmt,$payload);            
+            $state = $this->_pdoBindArray($stmt,$payload);
+            //die(print_r($vals));            
             $state->execute();
             $id = $this->conn->lastInsertId();
            
@@ -266,9 +269,9 @@ class Transactions
            
             $message = array();
             $message['status']="ERROR";
-            $message['message']='Transaction error at: addcard '.$e->getMessage()." : ".$sql;
+            $message['message']='Transaction error at: addcard '.$e->getMessage()." : ".$payload['msisdn'] .' : '. $request['msisdn'];;
             
-            $error = 'Transaction error at: addcard '.$e->getMessage();
+            $error = 'Transaction error at: addcard '.$e->getMessage()." : ".$payload['msisdn'] .' : '. $request['msisdn'];
             throw new Exception($error);
         }
         $error = 'Transaction error at: addcard '.$e->getMessage();
@@ -386,7 +389,7 @@ class Transactions
                 $error = 'Transaction error at: _addCard '.$e->getMessage();
                 throw new Exception($error);
             }
-            
+           
             //add to transactions DB
             //$this->addTransaction($payload);
             $payload['accountNo'] = $last_id;
@@ -403,7 +406,7 @@ class Transactions
             
             $message = array();
             $message['status']="ERROR";
-            $message['method']='Transaction error at: openAccount '.$e->getMessage()." : ".$sql;
+            $message['method']='Transaction error at: openAccount '.$e->getMessage()." : ";
             
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
