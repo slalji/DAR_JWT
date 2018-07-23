@@ -122,12 +122,13 @@ class DB extends PDO {
             case 'addCash': print_r( $transaction->cashin($data)); break;
             case 'payUtility': print_r( $transaction->payUtility($data)); break;
             case 'fundTransfer': print_r( $transaction->transferFunds($data)); break;
-            case 'nameLookup': print_r( print_r($transaction->NameLookup($data))); break;
-            case 'transactionLookup': print_r( print_r($transaction->TransactionLookup($data))); break;
+            case 'nameLookup':print_r($transaction->NameLookup($data)); break;
+            case 'transactionLookup': print_r($transaction->TransactionLookup($data)); break;
             case 'reserveAccount': print_r( $transaction->reserveAccount($data)); break;
             case 'unReserveAccount': print_r( $transaction->unReserveAccount($data)); break;
             case 'changeStatus': print_r( $transaction->updateAccountStatus($data)); break;
-            case 'linkAccount': print_r( $transaction->linkAccount($data)); break; //requestVNC
+            case 'requestCard': print_r( $transaction->requestCard
+            ($data)); break; //requestVNC
             case 'unLinkAccount': print_r( $transaction->unLinkAccount($data)); break;
             case 'exGratiaPayments': print_r( $transaction->ExGratiaPayments($data)); break;
             case 'checkBalance': print_r( $transaction->checkBalance($data)); break;

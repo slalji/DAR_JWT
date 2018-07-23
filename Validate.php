@@ -144,11 +144,9 @@ class Validate
     }
     public static function _checkRef($payload){
         //get accountNo;
-        $db = new DB();
-        //$customerNo = $payload['customerNo'];
+        $db = new DB();         
         $ref = $payload->reference;
-       // $accountNo = Validate::_getAccountNo($customerNo);
-       $flag=false;
+       $flag=true;
         try{
            
             $sql ="select utilitycode, utilityref, dealer, amount from transaction where reference ='$ref'";  
@@ -156,32 +154,35 @@ class Validate
             $stmt = $db->conn->prepare( $sql );
             $stmt->execute();            
             $rows = $stmt->fetchAll( PDO::FETCH_ASSOC );
+             
             if(!$rows)
                return false;
             $result = ($rows[0]);
-            //die(print_r($result));
+           
             
-            if($result['utilitycode'] == 'reserveAccount'){
-                $flag=true;
+            if($result['utilitycode'] != 'reserveAccount'){
+                $flag=false;
             }
-            else if ($result['utilityref'] == $payload->msisdn){
-                $flag=true;
+            else if ($result['utilityref'] != $payload->msisdn){
+                $flag=false;
             }
-            else if ($result['dealer']=='Transsnet'){
-                $flag=true;
+            else if ($result['dealer'] !='TRANSSNET'){
+                $flag=false;
             }
-            else if ($result['amount']==$payload->amount){
-                $flag=true;
+            else if ($result['amount'] !=$payload->amount){
+                $flag=false;
             }             
-            return $flag;
+           
         }
         catch(Exception $e){
-            return false;
+            $flag=false;
+            //return false;
         }
-       
-                 
+        //die(print_r((int)$flag));
+        return $flag;      
            
     }
+    
     public static function setTinfo($payload){
        
         //get accountNo;
@@ -224,19 +225,15 @@ class Validate
         }     
            
     }
-    public static function checkTransid($transid){
+    public static function _checkTransid($transid){
        
         $data = isset($err) ? $err :false;
             $db = new DB();
-            $sql ="select id, transid  from incoming where transid='".$transid."'";
+            $sql ="select id, transid  from transaction where transid='".$transid."'";
             $stmt = $db->conn->prepare( $sql );                     
             $stmt->execute();
             $result = $stmt->fetchAll();
-            if ($stmt->rowCount() > 1){
-               return true;
-            }
-            else
-                return false;
+            return $stmt->rowCount();
         
     }
     public static function openAccount($payload){
@@ -262,11 +259,11 @@ class Validate
             
            
             $db = new DB();
-            $sql ="select id from accountProfile where customerNo='".$payload->customerNo."'";
+            $sql ="select id from accountProfile where customerNo='".$payload->customerNo."' || msisdn='".$payload->msisdn."'";
             $stmt = $db->conn->prepare( $sql );                     
             $stmt->execute();
             if ($stmt->rowCount() > 0){
-                $err[] ='Account already exists';
+                $err[] ='Account already exists ' .$payload->customerNo .' '.$payload->msisdn;
             }
         }
         catch(Exception $e){
@@ -307,14 +304,19 @@ class Validate
     }
     public static function transactionLookup($payload){
         $err = array();
+        
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-        if (!isset($payload->transRef) || empty($payload->transRef)) {
-            $err[]='transRef may not be empty. transRef is the transaction id you would like to lookup, where as transid is this current transaction';
+        if (!isset($payload->transref) || empty($payload->transref)) {
+            $err[]='transRef may not be empty. transref is the transaction id you would like to lookup, where as transid is this current transaction';
+        }
+        if (!Validate::_checkTransid($payload->transref)) {
+            die('here2 ');
+            $err[]='this transaction does not exist';
         }
         
         $data = isset($err) ? $err :false;
@@ -419,10 +421,14 @@ class Validate
         if(Validate::_getSuspense($payload->customerNo) == 0){
             $err[]='You do not have funds to release at this time';
         }
-        if(!Validate::_checkRef($payload)){
+        $flag = Validate::_checkRef($payload);
+        
+        if(Validate::_checkRef($payload) != 0){
             $err[]='reference is invalid';
+            die(print_r($err));
         }
-        $data = isset($err) ? $err :false;
+       
+       $data = isset($err) ? $err :'';
     
         return ($data);
     }

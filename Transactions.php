@@ -35,7 +35,7 @@ class Transactions
         $payload = (array)$data;
         $arr = null;
         $customer = $this->_getAccountNo($data['customerNo']);
-        //die($customer.' : '.$data['customerNo']);
+        
         $transid=$data['transid'];
         unset($payload['transid']);
         unset($payload['customerNo']);
@@ -71,7 +71,7 @@ class Transactions
         $payload = (array)$data;
         $arr = null;
         $customer = $this->_getAccountNo($data['customerNo']);
-        //die($customer.' : '.$data['customerNo']);
+        
         $transid=$data['transid'];
         unset($payload['transid']);
         unset($payload['customerNo']);
@@ -109,17 +109,17 @@ class Transactions
         $profile['lastName']=isset($data['lastName'])?$data['lastName']:'';
         $profile['gender']=isset($data['gender'])?$data['gender']:'';
         $profile['customerNo']=isset($data['customerNo'])?$data['customerNo']:'';
-        $profile['accountNo']=isset($data['card'])?$data['accountNo']:'';
+        $profile['accountNo']=isset($data['accountNo'])?$data['accountNo']:'';
         $profile['msisdn']=isset($data['msisdn'])?$data['msisdn']:'';
         $profile['email']=isset($data['email'])?$data['email']:'';
-        $profile['status']=isset($data['status'])?$data['status']:0;
+        //$profile['status']=isset($data['status'])?$data['status']:0;
         $profile['addressLine1']=isset($data['addressLine1'])?$data['addressLine1']:'';
         $profile['addressCity']=isset($data['addressCity'])?$data['addressCity']:'';
         $profile['addressCountry']=isset($data['email'])?$data['email']:'';
         $profile['dob']=isset($data['dob'])?$data['dob']:'';
         $profile['currency']=isset($data['currency'])?$data['currency']:'TZS';
-        $profile['state']=isset($data['state'])?$data['state']:1; //acive=1 closed=0
-        $profile['active']=isset($data['active'])?$data['active']:0; //acive=0 closed=1
+        $profile['status']=1;
+        //$profile['active']=isset($data['active'])?$data['active']:0; //acive=0 closed=1
         $profile['nationality']=isset($data['nationality'])?$data['nationality']:'';
         $profile['balance']=0;
        
@@ -197,7 +197,7 @@ class Transactions
         return $arr;
     }
     public function _addCard($data)   {
-        //die(print_r('here'));
+        
         /*
         fulltimestamp create
         Name concat fname lname
@@ -222,15 +222,16 @@ class Transactions
        
         $payload = array();
         $payload['fulltimestamp'] = $request['fulltimestamp'];
+        $payload['accountNo'] = $request['accountNo'];
         $payload['name'] = $request['firstName']. ' '.$request['lastName'];
         $payload['msisdn'] = $request['msisdn'];
-        $payload['card'] = isset($request['card'])?$request['card']:'';
-        $payload['dealer'] = 'Transset';
+        //$payload['card'] = isset($request['card'])?$request['card']:'';
+        $payload['dealer'] = 'TRANSSNET';
         $payload['registeredby'] = 'SelcomTranssetAPI';
         $payload['confirmedby'] = 'SelcomTranssetAPI';
         $payload['registertimestamp'] =$request['fulltimestamp'];
         $payload['confirmtimestamp'] = $request['fulltimestamp'];
-        $payload['active'] = 1;
+        //$payload['active'] = 0;
         $payload['status'] = 1;        
         $payload['reference'] = $this->reference;//request['reference'];
         $payload['email'] = isset($request['email'])?$request['email']:'';
@@ -254,7 +255,7 @@ class Transactions
             $sql ="INSERT INTO card (".$cols.") VALUES (".$vals.")";
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);
-            //die(print_r($vals));            
+                     
             $state->execute();
             $id = $this->conn->lastInsertId();
            
@@ -316,7 +317,7 @@ class Transactions
                 $payload[$key]=$val;
               
             }
-            $payload['channel'] = 'TPAY';
+            $payload['channel'] = 'PALMPAY';
             foreach($payload as $key => $val){
                 
                     $cols.=$key.', ';
@@ -377,7 +378,7 @@ class Transactions
         try{
 
             $payload = (array)$data;    
-            $payload['accountNo'] = 'TPAY'.DB::getToken(12);       
+            $payload['accountNo'] = 'PALMPAY'.DB::getToken(12);       
             $dob=DB::toDate($payload['dob']);                        
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');            
@@ -392,7 +393,8 @@ class Transactions
            
             //add to transactions DB
             //$this->addTransaction($payload);
-            $payload['accountNo'] = $last_id;
+            //$payload['accountNo'] = $last_id;
+            //$payload['accountNo'] = 'PALMPAY' . 
             //add to accountProfile DB
             $this->_addAccountProfile($payload);
             $message = array();
@@ -521,7 +523,6 @@ class Transactions
             $baccountno = $row['bankaccountnumber'] === $payload['bankaccountnumber']?'':'999';
             // 
             if (empty($bname) && empty($bbranch) && empty($baccountname) && empty($baccountno)){
-                //die(print_r($row['bankaccountname'].' '. $payload['bankaccountname']));
                 $query = "UPDATE accountprofile SET bankname='".$bname."', bankbranch='".$bbranch."', bankaccountname='".$baccountname."', bankaccountnumber='".$baccountno."' WHERE id=$customer";
                 $this->conn->query($query);
 
@@ -563,19 +564,24 @@ class Transactions
             return DB::getErrorResponse($data, $err, $this->reference);
         $payload = (array)$data;    
         $response = $this->_setResponse('nameLookup');
-       
+        $where =null;
         try{
             
-            $where = 'where ';             
-            $where .= isset($payload['customerNo'])?'customerNo='.$payload['customerNo']:'msisdn='.$payload['msisdn'];
-             $sql ="select  * from accountprofile ".$where;
+            if(empty($payload['accountNo'])){
+                $where .= isset($payload['customerNo'])?'where customerNo="'.$payload['customerNo'].'"':' where msisdn="'.$payload['msisdn'].'"';
+            }
+            else 
+                "where accountNo=".$payload['accountNo'];
 
+            $sql ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'false\'),1,\'true\') AS statustxt, REPLACE(REPLACE(active,0,\'true\'),1,\'false\') AS activetxt, email, addressLine1,addressCity, addressCountry,dob as dateofbirth,state, gender, nationality, currency, balance, lastupdated from accountprofile '.$where;
+          
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);            
             $state->execute();            
           
             $result = $state->fetchAll(PDO::FETCH_ASSOC);
-            $json = json_encode($result);
+            
+            $json = json_encode($arr);
             
             $message = array();
             $message['status']="SUCCESS";
@@ -595,6 +601,7 @@ class Transactions
             
             $respArray = ['transid'=>$data->transid,'reference'=>$response['reference'],'responseCode' => 501, "Message"=>($message)];
         }
+        //die(print_r($sql));
         return (json_encode($respArray));
     }
     public function transactionLookup($data)   {
@@ -608,11 +615,12 @@ class Transactions
         //select * from accountprofile join transaction on accountprofile.card = transaction.card where transid = 'TPAY01052018161000'
         try{
              /*transRef is the needle transid */
-            $sql ="select * from transaction where transid = '".$data->transRef."'";
+            $sql ="select * from transaction where transid = '".$data->transref."'";
           
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);            
-            $state->execute();            
+            $state->execute();
+            $result = $state->fetchAll(PDO::FETCH_ASSOC);            
            
             $payload['reference']=$this->reference;//DB::getToken(19);//rand(10000000000,9999999999);
           
@@ -626,12 +634,13 @@ class Transactions
             //add to transactions DB no money exchanged, no entry to trans DB
             //$this->addTransaction($payload);
 
-            $result = $state->fetchAll(PDO::FETCH_ASSOC);
+            /*$result = $state->fetchAll(PDO::FETCH_ASSOC);
             $json = json_encode($result);
             if (empty($result)){
                 $error="transaction does not exist";
                 throw new Exception($error);
             }
+            */
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="transactionLookup";
@@ -678,7 +687,7 @@ class Transactions
 
             $selcom = new DbHandler();
             $result = $selcom->fundTransfer($payload['transid'],$payload['reference'],$payload['utilityref'], $payload['msisdn'],$payload['amount']);
-            
+            //die(print_r($result));
                 $message = array();
                 $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
                 $message['method']="transferFunds";
@@ -692,7 +701,7 @@ class Transactions
             
             $message = array();
             $message['status']="ERROR";
-            $message['method']='Transaction error at: transferFunds '.$e->getMessage()." : ";
+            $message['method']='Transaction error at: transferFunds '.$e->getMessage()." : ".$e;
             
             $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
         }
@@ -802,19 +811,23 @@ class Transactions
         $payload['reference']=$this->reference;  
         $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
         $customer = $this->_getAccountNo($account);
-        $active = isset($payload['status']) && $payload['status'] === 'open'?'0':'1';
+        $status = isset($payload['statustxt']) && $payload['statustxt'] === 'open'?'1':'0';
         $payload['accountNo']=$customer;
         unset( $payload['transid']);
                    
         try{
-            $sql = "UPDATE card SET active='".$active."' where id='".$customer."'; ";
-            $sql2 =" UPDATE accountprofile SET active='".$active."' where accountNo='".$customer."'";
+            $sql = "UPDATE card SET status='".$status."' where id='".$customer."'; ";
+            $sql2 =" UPDATE accountprofile SET status='".$status."' where accountNo='".$customer."'";
             
             $stmt = $this->conn->query($sql);
+            $stmt->execute();
+
             $stmt = $this->conn->query($sql2);
+            $stmt->execute();
 
             //$result = $this->_getProfile($customer);
-           
+            
+           //(print_r($result));
 
             $message = array();
             $message['status']="SUCCESS";
@@ -946,6 +959,7 @@ class Transactions
         $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
         $customer = $this->_getAccountNo($account);
         $amount = $payload['amount'];
+       
         $transid = $payload['transid'];
         $msisdn = $payload['msisdn'];
         $utilityref = $payload['msisdn'];//same account
@@ -953,14 +967,9 @@ class Transactions
         try{
             //create transaction to debit card of the amount added to suspense
             $selcom = new DbHandler();            
-            $result = $selcom->reserveAccount($transid,$ref,$utilityref,$msisdn,$amount);
+            $result = $selcom->reserveAccount($transid,$ref,$msisdn,$amount);
 
-            /*$sql ="UPDATE card SET suspense=suspense+$amount WHERE id=$customer";
-           
-            $stmt = $this->conn->prepare( $sql );
-            $stmt->execute();
-            $selcom = new DbHandler();
-            */
+           //die(print_r($result));
             $message = array();
             $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="reserveAmount";
@@ -973,7 +982,7 @@ class Transactions
             
             $message = array();
             $message['status']="ERROR";
-            $message['method']='Transaction error at: reserveAmount '.$e->getMessage()." : ";//.$sql;
+            $message['method']='Transaction error at: reserveAmount '.$e." : ";//.$sql;
             
             $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
         }
@@ -998,8 +1007,8 @@ class Transactions
         try{
             //create transaction to debit card of the amount added to suspense
             $selcom = new DbHandler();            
-            $result = $selcom->unReserveAccount($transid,$ref,$utilityref,$msisdn,$amount);
-
+            $result = $selcom->unReserveAccount($transid,$ref,$msisdn,$amount);
+            die(print_r($result));
             $message = array();
             $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="unReserveAccount";
@@ -1012,7 +1021,7 @@ class Transactions
             
             $message = array();
             $message['status']="ERROR";
-            $message['method']='Transaction error at: unReserveAccount '.$e->getMessage()." : ";//.$sql;
+            $message['method']='Transaction error at: unReserveAccount '.$e." : ";//.$sql;
             
             $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
         }
