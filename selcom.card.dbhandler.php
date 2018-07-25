@@ -2611,6 +2611,10 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 			$stmt->execute();
 			$result = $stmt->fetchAll();
 			
+			//update account profile
+			$query = "UPDATE accountprofile SET balance=balance-$amount-$charge, lastupdated=NOW()  WHERE accountNo='$account_no'";
+			$stmt = $this->pdo_db->prepare($query);
+			$stmt->execute();
 
 			$query = "UPDATE transaction SET result='000', message='$reply', complete_ts=NOW(), amount='$amount', obal='$obal', cbal='$cbal', charge='$charge', utilitycode='$service', utilityref='$msisdn' WHERE id=$trans_id";
 			$stmt = $this->pdo_db->prepare($query);
@@ -2630,7 +2634,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 	}
 
 	//unReserveFunds
-	function unReserveAccount($transid,$reference,$msisdn,$amount){
+	function unReserveAccount($transid,$reference,$transref,$msisdn,$amount){
 		 
 		$proceed = "OK";
 		$vendor = "TRANSSNET";
@@ -2662,9 +2666,9 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 		$account_no=$card_info['accountNo'];
 				 
 		// save the transaction
-		$query = "INSERT INTO transaction (fulltimestamp, transid, reference, vendor, card, amount, initiate_ts, channel, utilitycode, name, msisdn, dealer, type, utilityref) VALUES (NOW(), '$transid', '$reference', '$vendor', '$masked_card', '0', NOW(), '$channel', '$service', '$name', '$msisdn', '$dealer', 'DEBIT', '$msisdn')";
-		$this->pdo_db->exec($query);
-		$trans_id = $this->pdo_db->lastInsertId();
+		//$query = "INSERT INTO transaction (fulltimestamp, transid, reference, vendor, card, amount, initiate_ts, channel, utilitycode, name, msisdn, dealer, type, utilityref) VALUES (NOW(), '$transid', '$reference', '$vendor', '$masked_card', '0', NOW(), '$channel', '$service', '$name', '$msisdn', '$dealer', 'DEBIT', '$msisdn' where reference = '$transref')";
+		//$this->pdo_db->exec($query);
+		//$trans_id = $this->pdo_db->lastInsertId();
 				
 
 		// check account settings
@@ -2714,7 +2718,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 			$resp['resultcode'] = $resultcode;
 			$resp['result'] = $result;
 
-			$query = "UPDATE transaction SET result='$resultcode', message='$result', complete_ts=NOW(), amount='$amount' WHERE id=$trans_id";
+			$query = "UPDATE transaction SET result='$resultcode', message='$result', complete_ts=NOW(), amount='$amount' WHERE reference=$utilityref";
 			
 			$this->pdo_db->query($query);
 			$result = $proceed['reply'];
@@ -2738,14 +2742,18 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 			$query = "UPDATE card SET obal=balance, cbal=balance+$amount-$charge, balance=balance+$amount-$charge, suspense=suspense-$amount, reference='$reference', last_transaction=NOW(), dailytrans='$running' WHERE accountNo='$account_no'";
 			$stmt = $this->pdo_db->prepare($query);
 			$result = $stmt->execute();
-			die(print_r($result));
+			//die(print_r($result));
 			$query = "select balance, suspense, reference from card where accountNo='$account_no'";
 			$stmt = $this->pdo_db->prepare($query);
 			$stmt->execute();
 			$result = $stmt->fetchAll();
 			
+			//update account profile
+			$query = "UPDATE accountprofile SET balance=balance+$amount-$charge, lastupdated=NOW()  WHERE accountNo='$account_no'";
+			$stmt = $this->pdo_db->prepare($query);
+			$stmt->execute();
 
-			$query = "UPDATE transaction SET result='000', message='$reply', complete_ts=NOW(), amount='$amount', obal='$obal', cbal='$cbal', charge='$charge', utilitycode='$service', utilityref='$msisdn' WHERE id=$trans_id";
+			$query = "UPDATE transaction SET result='000', message='$reply', complete_ts=NOW(), amount='$amount', obal='$obal', cbal='$cbal', charge='$charge', utilitycode='$service', utilityref='$msisdn' WHERE reference='$transref'";
 			$stmt = $this->pdo_db->prepare($query);
 			$stmt->execute();
 			$response['resultcode']='000';
@@ -2759,6 +2767,5 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 			
 
 	}
-	
 }
 ?>

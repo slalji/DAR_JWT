@@ -165,6 +165,17 @@ class Transactions
         return $result;           
            
     }
+    public function _get_msisdn($accountNo){
+        
+        $sql ="select msisdn from accountProfile where accountNo ='$accountNo' ";  
+
+        $stmt = $this->conn->prepare( $sql );
+        $stmt->execute();            
+        $result = $stmt->fetchColumn();
+       
+        return $result;           
+           
+    }
     public function _getSuspense($customerNo){
         //get accountNo;
         
@@ -352,24 +363,51 @@ class Transactions
         
         
     }
-    /*public function _checkDupTrans($transid){
-        $message = array();
-        $message['resultcode']="002";
-        $message['result']="Duplicate request";
-           
-           
-        $sql ="select transid from transaction where transid=".$transid;
-        $stmt = $this->conn->prepare( $sql );
-        $stmt->execute();
-        if ($stmt->rowCount() > 0){
-            return $message;
+        /**
+ * Checks a 16 digit card number whether the checksum is Luhn-approved.
+ * If $create is set to true, return the input + the checksum.
+ * @param type $card
+ * @param type $create
+ * @return mixed
+ */
+function _checkLuhn($card, $create = false){
+    $segments = str_split($card, 15);
+    $digits = str_split($segments[0], 1);
+    foreach ($digits as $k => $d) {
+        if ($k % 2 == 0) {
+            $digits[$k] *= 2;
+            if (strlen($digits[$k]) > 1) {
+                $split = str_split($digits[$k]);
+                $digits[$k] = array_sum($split);
+            }
         }
-            
-        else 
-            return false;           
-           
     }
-    */
+    $digits = array_sum($digits)*9;
+    $digits = str_split($digits);
+    $checksum = $digits[max(array_keys($digits))];
+    
+    if ($create == false) {
+        if (!isset($segments[1])) {
+            return "Invalid input length.";
+        }
+        if ($checksum == $segments[1]) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return $segments[0].$checksum;
+    }
+}
+public function  _checkTcard($accountNo){
+    $sql = 'select id from tcard where accountNo="'.$accountNo.'"';
+    $stmt = $this->conn->prepare( $sql );
+    $stmt->execute();
+    $result = $stmt->fetchAll();
+    //die ('here'.print_r($result));
+    return $result;
+
+}
     public function openAccount($data)   {
         //check for required fields eg accountNo, msisdn, fname lname
         $err = Validate::openAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
@@ -421,7 +459,7 @@ class Transactions
             return DB::getErrorResponse($data, $err, $this->reference);
 
         $payload = (array)$data;
-        $tier = strtoupper(isset($payload['tier'])?$payload['tier']:$payload['']);
+        $tier =isset($payload['tier'])?strtoupper($payload['tier']):'A';
        
         //update accountProfile DB
         $customer = $this->_updateAccountProfile($payload);
@@ -564,6 +602,7 @@ class Transactions
             return DB::getErrorResponse($data, $err, $this->reference);
         $payload = (array)$data;    
         $response = $this->_setResponse('nameLookup');
+        
         $where =null;
         try{
             
@@ -571,7 +610,7 @@ class Transactions
                 $where .= isset($payload['customerNo'])?'where customerNo="'.$payload['customerNo'].'"':' where msisdn="'.$payload['msisdn'].'"';
             }
             else 
-                "where accountNo=".$payload['accountNo'];
+                $where = "where accountNo=".$payload['accountNo'];
 
             $sql ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'false\'),1,\'true\') AS statustxt, REPLACE(REPLACE(active,0,\'true\'),1,\'false\') AS activetxt, email, addressLine1,addressCity, addressCountry,dob as dateofbirth,state, gender, nationality, currency, balance, lastupdated from accountprofile '.$where;
           
@@ -581,7 +620,7 @@ class Transactions
           
             $result = $state->fetchAll(PDO::FETCH_ASSOC);
             
-            $json = json_encode($arr);
+            //$json = json_encode($arr);
             
             $message = array();
             $message['status']="SUCCESS";
@@ -609,38 +648,26 @@ class Transactions
         $err = Validate::transactionLookup($data);
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);
-        $payload = (array)$data;    
+        $payload = (array)$data;
+        $msisdn = isset($payload['msisdn'])?$payload['msisdn']:$this->_get_msisdn($payload['accountNo']);        
        
        
         //select * from accountprofile join transaction on accountprofile.card = transaction.card where transid = 'TPAY01052018161000'
         try{
              /*transRef is the needle transid */
-            $sql ="select * from transaction where transid = '".$data->transref."'";
+            $sql ="select * from transaction where transid = '".$data->transref."' && msisdn='$msisdn'";
           
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);            
             $state->execute();
             $result = $state->fetchAll(PDO::FETCH_ASSOC);            
            
-            $payload['reference']=$this->reference;//DB::getToken(19);//rand(10000000000,9999999999);
+            $payload['reference']=$this->reference;
           
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
             $payload['transid'] = $data->transid;
             $payload['message'] = 'transactionLookup';
-            //add to card DB updateCard ?
-            //$this->updateCard($payload);
             
-
-            //add to transactions DB no money exchanged, no entry to trans DB
-            //$this->addTransaction($payload);
-
-            /*$result = $state->fetchAll(PDO::FETCH_ASSOC);
-            $json = json_encode($result);
-            if (empty($result)){
-                $error="transaction does not exist";
-                throw new Exception($error);
-            }
-            */
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="transactionLookup";
@@ -654,7 +681,7 @@ class Transactions
             $message['status']="ERROR";
             $message['method']='Transaction error at: transactionLookup '.$e->getMessage()." : ";//.$sql;
             
-            $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
         return (json_encode($respArray));
     }
@@ -664,12 +691,15 @@ class Transactions
         $err = Validate::transferFunds($data);
         if (!empty($err))
             return DB::getErrorResponse($data, $err, $this->reference);        
-        $payload = (array)$data;    
-       
+        $payload = (array)$data;
+        $msisdn = isset($payload['msisdn'])?$payload['msisdn']:$this->_get_msisdn($payload['accountNo']);
+               
         try{             
            
             $payload['reference']=$this->reference;
             $payload['utilityref'] = $payload['toAccountNo'];
+           
+            //save extra info into tinfo table
             if(!Validate::setTinfo($payload)){
                 $err="Internal Error 500";
                 throw new Exception($err);
@@ -686,7 +716,7 @@ class Transactions
             
 
             $selcom = new DbHandler();
-            $result = $selcom->fundTransfer($payload['transid'],$payload['reference'],$payload['utilityref'], $payload['msisdn'],$payload['amount']);
+            $result = $selcom->fundTransfer($payload['transid'],$payload['reference'],$payload['utilityref'], $msisdn,$payload['amount']);
             //die(print_r($result));
                 $message = array();
                 $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
@@ -781,10 +811,10 @@ class Transactions
             }
             
             $message = array();
-            $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
+            $message['status']= 'SUCCESS';
             $message['method']="getStatement";
             $message['data']=$payload;
-            $code = $result['resultcode'] =='000'?200:501;
+            $code = '200';
 
             $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' =>  $code, "Message"=>($message)];
         
@@ -831,7 +861,7 @@ class Transactions
 
             $message = array();
             $message['status']="SUCCESS";
-            $message['method']="getStatement";
+            $message['method']="updateAccountStatus";
             $message['data']=$payload;
 
             $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
@@ -846,6 +876,7 @@ class Transactions
             
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
+        error_log("Oracle database not available!", 0);
         return json_encode($respArray);
     }
    
@@ -859,23 +890,23 @@ class Transactions
                  
         $payload = (array)$data;
         $payload['reference']=$this->reference;  
-        $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
-        $customer = $this->_getAccountNo($account);
+        $customer = isset($payload['accountNo'])?$payload['accountNo']:$this->_getAccountNo($payload['msisdn']);
+        
         $profile = json_decode($this->_getProfile($customer), true);
-        $msisdn_acct = $profile[0]['msisdn'];
+        //$msisdn_acct = $profile[0]['msisdn'];
         $name =  $profile[0]['firstName'].' '. $profile[0]['lastName']; 
         $amount = $payload['amount'];
         $transid = $payload['transid'];
-        $msisdn = $payload['msisdn'];   
-        
+        //$msisdn = $payload['msisdn'];   
+        //die(print_r($payload));
 
-        $payload['accountNo']=$customer;
+        //$payload['accountNo']=$customer;
         unset( $payload['transid']);
                    
         try{
            
             $selcom = new DbHandler();
-            $result = $selcom->utilityPayment($transid,'SPCASHIN',$msisdn_acct,$msisdn,$amount);            
+            $result = $selcom->utilityPayment($transid,'SPCASHIN',$payload['utilityref'],$payload['msisdn'],$amount,$payload['reference']);            
            
 
             $message = array();
@@ -892,7 +923,7 @@ class Transactions
             
             $message = array();
             $message['status']="ERROR";
-            $message['method']='Transaction error at: cashin '.$e->getMessage()." : ".$sql;
+            $message['method']='Transaction error at: cashin '.$e->getMessage();
             
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
@@ -1007,8 +1038,7 @@ class Transactions
         try{
             //create transaction to debit card of the amount added to suspense
             $selcom = new DbHandler();            
-            $result = $selcom->unReserveAccount($transid,$ref,$msisdn,$amount);
-            die(print_r($result));
+            $result = $selcom->unReserveAccount($transid,$ref,$payload['reference'],$msisdn,$amount);
             $message = array();
             $message['status']= $result['resultcode'] =='000'?'SUCCESS':'ERROR';
             $message['method']="unReserveAccount";
@@ -1026,6 +1056,116 @@ class Transactions
             $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
         }
         return (json_encode($respArray));
+    }
+    public function requestCard($data){
+        $err = Validate::requestCard($data);
+        if (!empty($err))
+            return DB::getErrorResponse($data, $err, $this->reference);
+        try{
+            
+            if (empty($this->_checkTcard( $data->accountNo))){
+                $request = (array)$data;
+                $today=date('Y-m-d H:i:s');;
+                $payload = array();
+                $payload['fulltimestamp'] = $today;
+                //$payload['customerNo'] = $request['customerNo'];
+                $payload['accountNo'] = $request['accountNo'];
+                $payload['name'] = $request['name'];
+                $payload['msisdn'] = $request['msisdn'];
+                $card = DB::getToken(16);
+                //$i=0;
+                do {
+                    //echo $i++;
+                    $card = DB::getToken(16);
+                } while ($this->_checkLuhn($card));
+                //die ($card.' : '.$this->_checkLuhn($card));
+                
+            
+                $payload['card'] = $card;
+                $payload['cvs'] = DB::getToken(3);
+                $payload['exp'] = DB::getToken(2).'/'.rand(2020,2027);
+                $payload['dealer'] = 'Transsnet';
+                
+                $payload['registeredby'] = 'SelcomTranssetAPI';
+                $payload['confirmedby'] = 'SelcomTranssetAPI';
+                $payload['registertimestamp'] = $today;
+                $payload['confirmtimestamp'] =  $today;
+                $payload['active'] = 0;
+                $payload['status'] = 1;        
+                $payload['reference'] = $this->reference;//request['reference'];
+                $payload['email'] = isset($request['email'])?$request['email']:'';
+                $payload['phone'] = isset($request['phone'])?$request['phone']:'';
+                //$payload['message'] = $request['message'];       
+                
+            
+                $cols = null;
+                $vals = null;
+                $sql =null;
+            
+                    
+                foreach($payload as $key => $val){
+                    
+                        $cols.=$key.', ';
+                        $vals.=':'.$key.', ';
+                }
+                $cols = rtrim($cols,', ');
+                $vals = rtrim($vals,', ');
+                
+                 
+                $sql ="INSERT INTO tcard (".$cols.") VALUES (".$vals.")";
+                $stmt = $this->conn->prepare( $sql );
+                $state = $this->_pdoBindArray($stmt,$payload);                        
+                $state->execute();
+
+                $id = $this->conn->lastInsertId();
+                $message = array();
+                $message['status']='000';
+                $message['method']="requestCard";
+                $message['data']=$payload;
+                $code = '200';
+                
+                $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' =>  $code, "Message"=>($message)];
+            }
+            else{
+                $err ="card Already Exists";
+                throw new Exception($err);
+            }
+
+                
+        }
+        catch(Exception $e) {
+            
+            $message = array();
+            $message['status']="ERROR";
+            $message['method']='requestCard' ;
+            $message['data']='Transaction error at: requestCard '.$e->getMessage();
+            
+            $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
+        }
+        return (json_encode($respArray));
+        
+    }
+    public function search($data){
+        //die('here '.$data->search);
+        
+        $searchthis = $data->search;
+        $matches = array();
+
+        $handle = @fopen("transsetlog.log", "r");
+        if ($handle)
+        {
+            while (!feof($handle))
+            {
+                $buffer = fgets($handle);
+                if(strpos($buffer, $searchthis) !== FALSE)
+                    $matches[] = $buffer;
+            }
+            fclose($handle);
+        }
+
+        //show results:
+        return $matches;
+        
     }
    
 

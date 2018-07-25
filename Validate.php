@@ -129,10 +129,10 @@ class Validate
         return $result;           
            
     }
-    public static function _getSuspense($customerNo){
+    public static function _getSuspense($accountNo){
         //get accountNo;
         $db = new DB();
-        $accountNo = Validate::_getAccountNo($customerNo);
+        //$accountNo = Validate::_getAccountNo($customerNo);
 
         $sql ="select suspense from card where id ='$accountNo'";  
 
@@ -274,7 +274,7 @@ class Validate
     }
     public static function updateAccount($payload) {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) {
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
@@ -287,10 +287,11 @@ class Validate
     }
     public static function nameLookup($payload) {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='customerNo or msisdn may not be empty';
+            $err[]='accountNo or msisdn may not be empty nameLookup';
         }
+        
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
@@ -302,11 +303,27 @@ class Validate
     
         return ($data);
     }
+    public static function requestCard($payload) {
+        $err = array();
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
+            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
+            $err[]='accountNo or msisdn may not be empty ';
+        }
+        
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            $err[]='transid may not be empty';
+        }
+       
+        $data = isset($err) ? $err :false;
+    
+        return ($data);
+    }
     public static function transactionLookup($payload){
         $err = array();
         
-        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
-            $err[]='accountNo may not be empty';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
+            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
+            $err[]='accountNo or msisdn may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -315,7 +332,6 @@ class Validate
             $err[]='transRef may not be empty. transref is the transaction id you would like to lookup, where as transid is this current transaction';
         }
         if (!Validate::_checkTransid($payload->transref)) {
-            die('here2 ');
             $err[]='this transaction does not exist';
         }
         
@@ -325,8 +341,8 @@ class Validate
     }
     public static function transferFunds($payload)    {
         $err = array();
-        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='msisdn may not be empty';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -351,7 +367,7 @@ class Validate
         $err = array();
         if (!isset($payload->customerNo) || empty($payload->customerNo)) 
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='customerNo or msisdn may not be empty';
+            $err[]='customerNo or msisdn may not be empty ';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -366,11 +382,11 @@ class Validate
     }
     public static function accountState($payload) {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='customerNo or msisdn may not be empty';
+            $err[]='accountNo or msisdn may not be empty';
         }
-        if (!isset($payload->status) || empty($payload->status)) {
+        if (!isset($payload->statustxt) || empty($payload->statustxt)) {
             $err[]='status may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
@@ -386,9 +402,9 @@ class Validate
     }
     public static function reserveAccount($payload) {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return $err[]='customerNo or msisdn may not be empty';
+            return $err[]='accountNo or msisdn may not be empty';
         }
         
         if (!isset($payload->transid) || empty($payload->transid)) {
@@ -404,9 +420,9 @@ class Validate
     }
     public static function unReserveAccount($payload) {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return $err[]='customerNo or msisdn may not be empty';
+            return $err[]='accountNo or msisdn may not be empty';
         }
         if (!isset($payload->reference) || empty($payload->reference)) {
             return $err[]='reference may not be empty';
@@ -418,7 +434,7 @@ class Validate
             $err[]='amount may not be empty';
         }
         
-        if(Validate::_getSuspense($payload->customerNo) == 0){
+        if(Validate::_getSuspense($payload->accountNo) == 0){
             $err[]='You do not have funds to release at this time';
         }
         $flag = Validate::_checkRef($payload);
@@ -462,9 +478,9 @@ class Validate
     } 
     public static function cashin($payload)    {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return $err[]='customerNo or msisdn may not be empty';
+            return $err[]='accountNo or msisdn may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -485,9 +501,9 @@ class Validate
     }
     public static function linkAccount($payload)    {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo)) 
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) 
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return $err[]='customerNo or msisdn may not be empty';
+            return $err[]='accountNo or msisdn may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';

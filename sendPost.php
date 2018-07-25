@@ -9,17 +9,32 @@ $payload = '{
 	"method": "openAccount",
 	"requestParams": {
 		"transid": "01052018161000",
-		"firstName": "Nancy",
-		"lastName": "Drew",
-		"addressCity": "Mwanza",
+		"firstName": "David",
+		"lastName": "Beckham",
+		"addressCity": "Tunduma",
 		"addressCountry": "Tanzania",
-		"dob": "1997-01-10",
+		"dob": "1987-04-10",
 		"currency": "TZS",
-		"customerNo": "255754200201",
-		"msisdn": "255754200200"
+		"customerNo": "255754200204",
+		"msisdn": "255754200204"
 		
 	}
 }';
+$updateAccount =' {
+	"iss": "Selcom Transsnet API",
+	"timestamp": "2018-07-06 12:14:33",
+	"method": "updateAccount",
+	"requestParams": {
+		"transid": "01052018161212",
+		"addressCity": "Dodoma",
+		"dob": "1998-01-10",
+		"customerNo": "255789654700",
+    "msisdn": "255789654700",
+    "accountNo": "10"
+		
+	}
+}
+';
 
 $transferFunds='{
   "iss": "Selcom Transsnet API",
@@ -27,9 +42,9 @@ $transferFunds='{
   "method": "fundTransfer",
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
-    "msisdn": "255789654700",
     "toAccountNo": "255754200200",
     "amount": "10",
+    "accountNo": "10",
     "currency": "TZS"
   }
 }
@@ -40,7 +55,7 @@ $transfundsWithinfo='{
   "method": "fundTransfer",
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
-    "msisdn": "255789654700",
+    "accountNo": "10",
     "toAccountNo": "255754200200",
     "transtype": "fee",
     "geocode": {"lat":"-6.802353","lng":"39.279556"},
@@ -55,7 +70,8 @@ $nameLookup='{
   "method": "nameLookup",
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
-    "msisdn": "255789654700"
+    "msisdn": "255789654700",
+    "accountNo": "10"
   }
 }';
 $transactionLookup='{ 
@@ -65,6 +81,7 @@ $transactionLookup='{
 	"requestParams": {
 		"transid": "'.DB::getToken(12).'",
     "transref": "112217916212",
+    "msisdn": "255789654700",
     "accountNo": "10"
 	}
 }';
@@ -75,7 +92,7 @@ $checkBalance='
   "timestamp": "2018-07-06 12:14:33",
   "method": "checkBalance",
   "requestParams": {
-    "transid": "'.DB::getToken(12).'",
+    "transid": "010520181610210",
     "msisdn": "255789654555",
     "accountNo": "10"
   }
@@ -88,9 +105,9 @@ $getStatement='
   "timestamp": "2018-07-06 12:14:33",
   "method": "getStatement",
   "requestParams": {
-    "transid": "'.DB::getToken(12).'",
+    "transid": "010520181610210",
     "msisdn": "255789654555",
-    "customerNo": "255789654555"
+    "accountNo": "10"
   }
 }';
 
@@ -115,7 +132,7 @@ $unReserveAccount='
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
     "msisdn": "255789654700",
-    "reference":"201471103124",
+    "reference":"011504192621",
     "customerNo": "255789654700",
     "amount":"10",
     "currency":"TZS"
@@ -128,12 +145,52 @@ $changeState ='
 	"timestamp": "2018-07-06 12:14:33",
 	"method": "changeStatus",
 	"requestParams": {
-		"transid": "01052018161500",
+    "transid": "'.DB::getToken(12).'",
 		"statustxt": "close",
-		"customerNo": "255789654555",
+		"accountNo": "10",
 		"msisdn": "255789654555"
 		
 	}
+}';
+$requestCard ='
+{
+	"iss": "Selcom Transsnet API",
+	"timestamp": "2018-07-06 12:14:33",
+	"method": "requestCard",
+	"requestParams": {
+    "transid": "'.DB::getToken(12).'",
+    "name": "Salma Kanji Lalji",
+    "msisdn": "255789654700",
+    "accountNo": "10"
+		
+	}
+}';
+$search ='
+{
+	"iss": "Selcom Transsnet API",
+	"timestamp": "2018-07-06 12:14:33",
+	"method": "search",
+	"requestParams": {
+    "transid": "'.DB::getToken(12).'",
+    "search": "\"responseCode\":501",
+    "name": "Salma Kanji Lalji",
+    "msisdn": "255789654700",
+    "accountNo": "10"
+		
+	}
+}';
+$cashin = '{
+  "iss": "Selcom Transsnet API",
+  "timestamp": "2018-07-06 12:14:33",
+  "method": "cashin",
+  "requestParams": {
+    "transid": "'.DB::getToken(12).'",
+    "msisdn": "255789654700",
+    "accountNo": "10",
+    "utilityref":"255789654555",
+    "amount":"10",
+    "currency":"TZS"
+  }
 }';
 
 
@@ -142,13 +199,13 @@ $bearer = Token::sign($payload);
 
 $curl = curl_init(); 
 curl_setopt_array($curl, array(
-  CURLOPT_URL => "http://127.0.0.1/selcomJWT/",
+  CURLOPT_URL => "http://127.0.0.1/selcomTranssnet/",
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => "",
   CURLOPT_MAXREDIRS => 10, 
   CURLOPT_TIMEOUT => 30,
   CURLOPT_CUSTOMREQUEST => "POST",
-  CURLOPT_POSTFIELDS => /*json_encode*/($unReserveAccount),
+  CURLOPT_POSTFIELDS => /*payload*/($cashin),
   CURLOPT_HTTPHEADER => array(
     "content-type:application/json",
     "authorization: Bearer " . $bearer,
