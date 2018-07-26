@@ -81,7 +81,7 @@ class DB extends PDO {
             $message = array();
             $message['status']="Internal Server Error";
             //$message['method']="openAccount";
-            $message['data']=$err;
+            $message['data']=($err);
             $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 500, "Message"=>($message)];
 
            return json_encode($respArray); 
@@ -92,14 +92,15 @@ class DB extends PDO {
            // $params = $this->toString($data);
             $params = json_encode((array)$data);
             $paramdatetime = $this->toDateTime($data->timestamp);           
-
+            $method = isset($data->method)?$data->method:'';
+            $transid = isset($data->requestParams->transid)?$data->requestParams->transid:'';
             //date('Y-m-d H:i:s',$data->timestamp);
             $sql= 'INSERT INTO incoming (fulltimestamp, paramtimestamp, method, transid,payload) 
                 VALUES (now(), :paramtimestamp, :method, :transid, :payload)';
             $stmt = $this->conn->prepare( $sql );
             $stmt->bindValue( "paramtimestamp", $paramdatetime, PDO::PARAM_STR );            
-            $stmt->bindValue( "method", $data->method, PDO::PARAM_STR );
-            $stmt->bindValue( "transid", $data->requestParams->transid, PDO::PARAM_STR );
+            $stmt->bindValue( "method", $method, PDO::PARAM_STR );
+            $stmt->bindValue( "transid", $transid, PDO::PARAM_STR );
             $stmt->bindValue( "payload", $params , PDO::PARAM_STR);
             $stmt->execute();
             return true; 
@@ -132,7 +133,8 @@ class DB extends PDO {
             //case 'exGratiaPayments': $response = ( $transaction->ExGratiaPayments($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'checkBalance': $response = ( $transaction->checkBalance($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'getStatement': $response = ( $transaction->getStatement($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
-            default: $response = ('invalid command method found: '.$method);
+            default: return json_encode($response = ["transid"=>"","reference"=>"","responseCode"=>"401","Message"=>["status"=>"ERROR","method"=>"","data"=>"invalid command method found: ".$method]]);
+            
             
         }
 

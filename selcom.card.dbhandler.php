@@ -738,7 +738,7 @@ class DbHandler{
 			$response['id'] = $row['id'];
 		}else{
 			$response['msg']  = "Notification not found";
-			$response['resultcode'] = "404";
+			$response['resultcode'] = "412";
 			$response['result'] = "FAIL";
 		}
 		return $response;
@@ -804,7 +804,7 @@ class DbHandler{
 			$response['notifications']=$notifs;
 		}else{
 			$response['msg']  = "Notifications not found";
-			$response['resultcode'] = "404";
+			$response['resultcode'] = "412";
 			$response['result'] = "FAIL";
 		}
 		return $response;
@@ -1768,7 +1768,7 @@ function lookup($utilitycode,$utilityref, $amount, $msisdn) {
 		$response['result'] = 'success';
 		$response['txn'] = $lookup_res;
 	}else {
-		$response['resultcode'] = '404';
+		$response['resultcode'] = '412';
 		$response['result'] = 'Not implemented';
 	}
 

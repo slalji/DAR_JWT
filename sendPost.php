@@ -3,11 +3,13 @@
 require_once ("jwt_encode.php");
 require_once ("DB.php");
 
-$payload = '{
+$openAccount = '{
 	"iss": "Selcom Transsnet API",
 	"timestamp": "2018-07-06 12:14:33",
 	"method": "openAccount",
 	"requestParams": {
+		"customerNo": "255754200204",
+		"msisdn": "255754200204"
 		"transid": "01052018161000",
 		"firstName": "David",
 		"lastName": "Beckham",
@@ -15,9 +17,8 @@ $payload = '{
 		"addressCountry": "Tanzania",
 		"dob": "1987-04-10",
 		"currency": "TZS",
-		"customerNo": "255754200204",
-		"msisdn": "255754200204"
-		
+
+
 	}
 }';
 $updateAccount =' {
@@ -31,7 +32,7 @@ $updateAccount =' {
 		"customerNo": "255789654700",
     "msisdn": "255789654700",
     "accountNo": "10"
-		
+
 	}
 }
 ';
@@ -74,13 +75,13 @@ $nameLookup='{
     "accountNo": "10"
   }
 }';
-$transactionLookup='{ 
+$transactionLookup='{
 	"iss": "Selcom Transsnet API",
 	"timestamp": "2018-07-06 12:14:33",
 	"method": "transactionLookup",
 	"requestParams": {
 		"transid": "'.DB::getToken(12).'",
-    "transref": "112217916212",
+    "transref": "01052018161002",
     "msisdn": "255789654700",
     "accountNo": "10"
 	}
@@ -149,7 +150,7 @@ $changeState ='
 		"statustxt": "close",
 		"accountNo": "10",
 		"msisdn": "255789654555"
-		
+
 	}
 }';
 $requestCard ='
@@ -162,7 +163,7 @@ $requestCard ='
     "name": "Salma Kanji Lalji",
     "msisdn": "255789654700",
     "accountNo": "10"
-		
+
 	}
 }';
 $search ='
@@ -176,7 +177,7 @@ $search ='
     "name": "Salma Kanji Lalji",
     "msisdn": "255789654700",
     "accountNo": "10"
-		
+
 	}
 }';
 $cashin = '{
@@ -193,19 +194,19 @@ $cashin = '{
   }
 }';
 
+$data = $nameLookup;
+$bearer = Token::sign($data);
 
-$bearer = Token::sign($payload);
 
-
-$curl = curl_init(); 
+$curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => "http://127.0.0.1/selcomTranssnet/",
+  CURLOPT_URL => "http://127.0.0.1/selcomJWT/",
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => "",
-  CURLOPT_MAXREDIRS => 10, 
+  CURLOPT_MAXREDIRS => 10,
   CURLOPT_TIMEOUT => 30,
   CURLOPT_CUSTOMREQUEST => "POST",
-  CURLOPT_POSTFIELDS => /*payload*/($cashin),
+  CURLOPT_POSTFIELDS => $data,
   CURLOPT_HTTPHEADER => array(
     "content-type:application/json",
     "authorization: Bearer " . $bearer,

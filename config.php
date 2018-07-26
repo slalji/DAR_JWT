@@ -7,9 +7,9 @@
 
 
 define( "DB_HOST", "localhost" );
-define( "DB_DSN", "mysql:host=localhost;dbname=selcom_transset" );
+define( "DB_DSN", "mysql:host=localhost;dbname=selcom_transsnet" );
 define( "DB_USER", "salma" );
 define( "DB_PASS", "@selcom09" );
 define( "CLS_PATH", "class" );
-define( "DB_NAME", "selcom_transset" );
+define( "DB_NAME", "selcom_transsnet" );
 define( "APP_NAME", "Selcom Transsnet API" );

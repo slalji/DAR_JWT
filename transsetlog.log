@@ -67,3 +67,114 @@ You messed up! {"transid":"270061190119","reference":"169801472151","responseCod
 2018-07-25 11:16:33 {"transid":"010520181610210","reference":"580122321142","responseCode":501,"Message":{"status":"ERROR","method":"cashin","data":{"resultcode":"002","result":"Duplicate request"}}}
 2018-07-25 11:18:04 {"transid":"152026223112","0":"132542314411","responseCode":501,"Message":{"status":"ERROR","method":"Transaction error at: cashin SQLSTATE[42S02]: Base table or view not found: 1146 Table 'card.tariff' doesn't exist : "}}
 2018-07-25 11:18:33 {"transid":"210517221228","0":"803095972124","responseCode":501,"Message":{"status":"ERROR","method":"Transaction error at: cashin SQLSTATE[42S02]: Base table or view not found: 1146 Table 'card.tariff' doesn't exist"}}
+2018-07-25 13:32:51 {"transid":"891521212124","0":"628130119131","responseCode":501,"Message":{"status":"ERROR","method":"Transaction error at: cashin SQLSTATE[42S02]: Base table or view not found: 1146 Table 'card.tariff' doesn't exist"}}
+2018-07-25 13:33:21 {"transid":"247121546396","0":"117139212108","responseCode":501,"Message":{"status":"ERROR","method":"Transaction error at: cashin SQLSTATE[42S02]: Base table or view not found: 1146 Table 'card.tariff' doesn't exist"}}
+2018-07-25 13:33:24 {"transid":"112715748421","0":"524202139181","responseCode":501,"Message":{"status":"ERROR","method":"Transaction error at: cashin SQLSTATE[42S02]: Base table or view not found: 1146 Table 'card.tariff' doesn't exist"}}
+2018-07-25 13:35:30 {"transid":"237460350122","0":"221229112215","responseCode":501,"Message":{"status":"ERROR","method":"Transaction error at: cashin SQLSTATE[42S02]: Base table or view not found: 1146 Table 'card.tariff' doesn't exist"}}
+2018-07-25 14:00:05 {"transid":"01052018161256","reference":"182241139222","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Dodoma","addressCountry":"","dateofbirth":"1998-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"30","lastupdated":"2018-07-25 10:34:47"}]}}
+2018-07-25 14:16:50 Array
+2018-07-25 14:17:28 Array
+2018-07-25 14:18:42 1
+2018-07-25 14:19:40 1
+2018-07-25 14:19:56 1
+2018-07-25 14:20:11 1
+2018-07-25 14:21:35 1
+2018-07-25 14:22:30 1
+2018-07-25 14:24:20 
+2018-07-25 14:25:22 invalid command method found: test
+2018-07-25 14:27:17 {"transid":null,"reference":"","responseCode":"402","Message":{"status":"ERROR","method":"","data":"invalid command method found: test"}}
+2018-07-25 14:28:04 {"transid":"","reference":"","responseCode":"402","Message":{"status":"ERROR","method":"","data":"invalid command method found: test"}}
+2018-07-25 14:49:44 {"transid":"","reference":"","responseCode":"401","Message":{"status":"ERROR","method":"","data":"invalid command method found: test"}}
+2018-07-26 09:56:45 {"transid":"229138221310","reference":"411802395257","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Dodoma","addressCountry":"","dateofbirth":"1998-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"30","lastupdated":"2018-07-25 10:34:47"}]}}
+2018-07-26 09:56:45 
+2018-07-26 10:02:18 {"transid":"514171121212","reference":"504113171208","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Dodoma","addressCountry":"","dateofbirth":"1998-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"30","lastupdated":"2018-07-25 10:34:47"}]}}
+2018-07-26 10:02:18 
+2018-07-26 10:08:17 {"transid":"409153422211","reference":"211772220129","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Dodoma","addressCountry":"","dateofbirth":"1998-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"30","lastupdated":"2018-07-25 10:34:47"}]}}
+2018-07-26 10:08:17 
+2018-07-26 10:10:16 {"transid":"620913119300","reference":"117218119426","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Dodoma","addressCountry":"","dateofbirth":"1998-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"30","lastupdated":"2018-07-25 10:34:47"}]}}
+2018-07-26 10:10:16 
+2018-07-26 10:14:08 {"transid":"012731803615","reference":"656502311982","responseCode":200,"Message":{"status":"SUCCESS","method":"transferFunds","data":{"result":{"sender":{"accountNo":"10","balance":20,"reference":"656502311982","amount":"10","dated":"2018-07-26 10:14:07","description":"Successfully sent funds to Nancy Drew. Your Account has been debited TZS 10 on 2018-07-26 10:14:07. Updated balance TZS 20. Reference 656502311982"},"receiver":{"accountNo":"PALMPAY716531821232","balance":170,"reference":"656502311982","amount":"10","dated":"2018-07-26 10:14:07","description":"You have received funds from Salma Kanji Lalji. Your account has been credited TZS 10 on 2018-07-26 10:14:07. Updated balance TZS 170. Reference 656502311982"}},"txn":{"date":"2018-07-26 10:14:07","biller":"fundTransfer","amount":"10","charge":0},"resultcode":"000"}}}
+2018-07-26 10:14:08 
+2018-07-26 10:15:35 {"transid":"224900129512","reference":"332322422251","responseCode":501,"Message":{"status":"ERROR","method":"transferFunds","data":{"resultcode":"051","result":"Insufficient funds"}}}
+2018-07-26 10:15:35 
+2018-07-26 10:22:44 {"transid":"137110021122","reference":"298092122654","responseCode":200,"Message":{"status":"SUCCESS","method":"transactionLookup","data":[{"id":"373","fulltimestamp":"2018-07-26 10:15:35","transid":"224900129512","reference":"332322422251","vendor":"TRANSSNET","card":"XXXX XXXX XXXX ","msisdn":"255789654700","amount":"100","result":"051","message":"Insufficient funds","obal":"0","cbal":"0","charge":"0","name":"Salma Kanji Lalji","type":"DEBIT","comments":"-","status":"0","initiated":"-","completed":"-","initiate_ts":"2018-07-26 10:15:35","complete_ts":"2018-07-26 10:15:35","channel":"TPAY","utilitycode":"fundTransfer","utilityref":"255789654700","dealer":"Transsnet","narration":"-","fuel_type":"-","fuel_rate":"0","fuel_volume":"0","fuel_bonus":"0"}]}}
+2018-07-26 10:22:44 
+2018-07-26 11:03:46 {"transid":"514140912231","reference":"631126014041","responseCode":500,"Message":{"status":"Internal Server Error","data":["this transaction does not exist"]}}
+2018-07-26 11:03:46 
+2018-07-26 11:09:10 {"transid":"322162015713","reference":"202648451111","responseCode":500,"Message":{"status":"Internal Server Error","data":"[\"this transaction does not exist\"]"}}
+2018-07-26 11:09:10 
+2018-07-26 11:09:41 {"transid":"111724546539","reference":"128403220295","responseCode":500,"Message":{"status":"Internal Server Error","data":["this transaction does not exist"]}}
+2018-07-26 11:09:41 
+2018-07-26 11:10:56 {"transid":"294371912102","reference":"113215912304","responseCode":500,"Message":{"status":"Internal Server Error","data":"this transaction does not exist"}}
+2018-07-26 11:10:56 
+2018-07-26 11:11:59 {"transid":"001812925643","reference":"983211211741","responseCode":200,"Message":{"status":"SUCCESS","method":"transactionLookup","data":[{"id":"41","fulltimestamp":"2018-07-17 10:33:02","transid":"01052018161002","reference":"202136172974","vendor":"TRANSSNET","card":"XXXX XXXX XXXX ","msisdn":"255789654700","amount":"10","result":"045","message":"Account  is closed","obal":"0","cbal":"0","charge":"0","name":"Salma Kanji Lalji","type":"DEBIT","comments":"-","status":"0","initiated":"-","completed":"-","initiate_ts":"2018-07-17 10:33:02","complete_ts":"2018-07-17 10:33:02","channel":"TPAY","utilitycode":"fundTransfer","utilityref":"255789654555","dealer":"Selcom","narration":"-","fuel_type":"-","fuel_rate":"0","fuel_volume":"0","fuel_bonus":"0"}]}}
+2018-07-26 11:11:59 
+2018-07-26 11:13:16 {"transid":"410222011123","reference":"556127416182","responseCode":500,"Message":{"status":"Internal Server Error","data":"\"this transaction does not exist\""}}
+2018-07-26 11:13:16 
+2018-07-26 11:13:48 {"transid":"007133120428","reference":"144061101152","responseCode":500,"Message":{"status":"Internal Server Error","data":"[\"this transaction does not exist\"]"}}
+2018-07-26 11:13:48 
+2018-07-26 11:14:09 {"transid":"211311129133","reference":"171173220829","responseCode":500,"Message":{"status":"Internal Server Error","data":["this transaction does not exist"]}}
+2018-07-26 11:14:09 
+2018-07-26 11:14:37 Array
+2018-07-26 11:14:37 
+2018-07-26 11:15:19 {"transid":"221231522963","reference":"122717231210","responseCode":500,"Message":"{\"status\":\"Internal Server Error\",\"data\":[\"this transaction does not exist\"]}"}
+2018-07-26 11:15:19 
+2018-07-26 11:15:36 {"transid":"119111146623","reference":"711285622114","responseCode":500,"Message":{"status":"Internal Server Error","data":["this transaction does not exist"]}}
+2018-07-26 11:15:36 
+2018-07-26 11:16:10 {"transid":"115215122511","reference":"512049283111","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255754200200","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Mbeya","addressCountry":"","dateofbirth":"1997-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"100","lastupdated":"2018-07-24 09:54:57"}]}}
+2018-07-26 11:16:10 
+2018-07-26 11:17:35 {"transid":"081122170414","reference":"637328110422","responseCode":200,"Message":{"status":"SUCCESS","method":"transactionLookup","data":[{"id":"41","fulltimestamp":"2018-07-17 10:33:02","transid":"01052018161002","reference":"202136172974","vendor":"TRANSSNET","card":"XXXX XXXX XXXX ","msisdn":"255789654700","amount":"10","result":"045","message":"Account  is closed","obal":"0","cbal":"0","charge":"0","name":"Salma Kanji Lalji","type":"DEBIT","comments":"-","status":"0","initiated":"-","completed":"-","initiate_ts":"2018-07-17 10:33:02","complete_ts":"2018-07-17 10:33:02","channel":"TPAY","utilitycode":"fundTransfer","utilityref":"255789654555","dealer":"Selcom","narration":"-","fuel_type":"-","fuel_rate":"0","fuel_volume":"0","fuel_bonus":"0"}]}}
+2018-07-26 11:17:35 
+2018-07-26 11:19:35 {"transid":"174161722129","reference":"108223113441","responseCode":501,"Message":{"status":"ERROR","method":"transferFunds","data":{"resultcode":"057","result":"Invalid destination card"}}}
+2018-07-26 11:19:35 
+2018-07-26 11:25:32 {"transid":"111023716140","reference":"211238410114","responseCode":501,"Message":{"status":"ERROR","method":"transferFunds","data":{"resultcode":"057","result":"Invalid destination card"}}}
+2018-07-26 11:25:32 
+2018-07-26 11:26:52 {"transid":"221320321192","reference":"102129581211","responseCode":501,"Message":{"status":"ERROR","method":"transferFunds","data":{"resultcode":"057","result":"Invalid destination card"}}}
+2018-07-26 11:26:52 
+2018-07-26 11:28:22 {"transid":"311515002124","reference":"011734226131","responseCode":200,"Message":{"status":"SUCCESS","method":"transactionLookup","data":[{"id":"41","fulltimestamp":"2018-07-17 10:33:02","transid":"01052018161002","reference":"202136172974","vendor":"TRANSSNET","card":"XXXX XXXX XXXX ","msisdn":"255789654700","amount":"10","result":"045","message":"Account  is closed","obal":"0","cbal":"0","charge":"0","name":"Salma Kanji Lalji","type":"DEBIT","comments":"-","status":"0","initiated":"-","completed":"-","initiate_ts":"2018-07-17 10:33:02","complete_ts":"2018-07-17 10:33:02","channel":"TPAY","utilitycode":"fundTransfer","utilityref":"255789654555","dealer":"Selcom","narration":"-","fuel_type":"-","fuel_rate":"0","fuel_volume":"0","fuel_bonus":"0"}]}}
+2018-07-26 11:28:22 
+2018-07-26 11:34:50 {"transid":"103115807114","reference":"721194120824","responseCode":200,"Message":{"status":"SUCCESS","method":"transactionLookup","data":[{"id":"41","fulltimestamp":"2018-07-17 10:33:02","transid":"01052018161002","reference":"202136172974","vendor":"TRANSSNET","card":"XXXX XXXX XXXX ","msisdn":"255789654700","amount":"10","result":"045","message":"Account  is closed","obal":"0","cbal":"0","charge":"0","name":"Salma Kanji Lalji","type":"DEBIT","comments":"-","status":"0","initiated":"-","completed":"-","initiate_ts":"2018-07-17 10:33:02","complete_ts":"2018-07-17 10:33:02","channel":"TPAY","utilitycode":"fundTransfer","utilityref":"255789654555","dealer":"Selcom","narration":"-","fuel_type":"-","fuel_rate":"0","fuel_volume":"0","fuel_bonus":"0"}]}}
+2018-07-26 11:34:50 
+2018-07-26 11:48:06 {"transid":"231278423936","reference":"120110924658","responseCode":200,"Message":{"status":"SUCCESS","method":"transactionLookup","data":[{"id":"41","fulltimestamp":"2018-07-17 10:33:02","transid":"01052018161002","reference":"202136172974","vendor":"TRANSSNET","card":"XXXX XXXX XXXX ","msisdn":"255789654700","amount":"10","result":"045","message":"Account  is closed","obal":"0","cbal":"0","charge":"0","name":"Salma Kanji Lalji","type":"DEBIT","comments":"-","status":"0","initiated":"-","completed":"-","initiate_ts":"2018-07-17 10:33:02","complete_ts":"2018-07-17 10:33:02","channel":"TPAY","utilitycode":"fundTransfer","utilityref":"255789654555","dealer":"Selcom","narration":"-","fuel_type":"-","fuel_rate":"0","fuel_volume":"0","fuel_bonus":"0"}]}}
+2018-07-26 11:48:06 
+2018-07-26 11:58:08 {"transid":"303411211219","reference":"254409316312","responseCode":200,"Message":{"status":"SUCCESS","method":"transferFunds","data":{"result":{"sender":{"accountNo":"10","balance":80,"reference":"254409316312","amount":"10","dated":"2018-07-26 11:58:08","description":"Successfully sent funds to Nancy Drew. Your Account has been debited TZS 10 on 2018-07-26 11:58:08. Updated balance TZS 80. Reference 254409316312"},"receiver":{"accountNo":"PALMPAY716531821232","balance":20,"reference":"254409316312","amount":"10","dated":"2018-07-26 11:58:08","description":"You have received funds from Salma Kanji Lalji. Your account has been credited TZS 10 on 2018-07-26 11:58:08. Updated balance TZS 20. Reference 254409316312"}},"txn":{"date":"2018-07-26 11:58:08","biller":"fundTransfer","amount":"10","charge":0},"resultcode":"000"}}}
+2018-07-26 11:58:08 
+2018-07-26 12:28:00 {"transid":"154522495069","reference":"151451285621","responseCode":200,"Message":{"status":"SUCCESS","method":"transferFunds","data":{"result":{"sender":{"accountNo":"10","balance":70,"reference":"151451285621","amount":"10","dated":"2018-07-26 12:28:00","description":"Successfully sent funds to Nancy Drew. Your Account has been debited TZS 10 on 2018-07-26 12:28:00. Updated balance TZS 70. Reference 151451285621"},"receiver":{"accountNo":"PALMPAY716531821232","balance":30,"reference":"151451285621","amount":"10","dated":"2018-07-26 12:28:00","description":"You have received funds from Salma Kanji Lalji. Your account has been credited TZS 10 on 2018-07-26 12:28:00. Updated balance TZS 30. Reference 151451285621"}},"txn":{"date":"2018-07-26 12:28:00","biller":"fundTransfer","amount":"10","charge":0},"resultcode":"000"}}}
+2018-07-26 12:28:00 
+2018-07-26 12:31:49 {"transid":"212106138148","reference":"951826171522","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Mbeya","addressCountry":"","dateofbirth":"1997-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"70","lastupdated":"2018-07-26 12:28:00"}]}}
+2018-07-26 12:31:49 
+2018-07-26 12:33:52 {"transid":"122110318912","reference":"298654201017","responseCode":500,"Message":{"status":"Internal Server Error","data":["accountNo or msisdn may not be empty nameLookup"]}}
+2018-07-26 12:33:52 
+2018-07-26 12:41:57 {"transid":"321112248619","reference":"114821665202","responseCode":500,"Message":{"status":"Internal Server Error","data":["accountNo or msisdn may not be empty nameLookup"]}}
+2018-07-26 12:41:57 
+2018-07-26 12:43:00 {"transid":"910733349812","reference":"181225220612","responseCode":500,"Message":{"status":"Internal Server Error","data":["accountNo or msisdn may not be empty nameLookup"]}}
+2018-07-26 12:43:00 
+2018-07-26 12:44:45 {"transid":"124219565517","reference":"241615952121","responseCode":500,"Message":{"status":"Internal Server Error","data":["accountNo or msisdn may not be empty nameLookup"]}}
+2018-07-26 12:44:45 
+2018-07-26 12:49:30 {"transid":"161521806210","reference":null,"responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Mbeya","addressCountry":"","dateofbirth":"1997-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"70","lastupdated":"2018-07-26 12:28:00"}]}}
+2018-07-26 12:49:30 
+2018-07-26 12:50:11 {"transid":"708221129213","reference":"165501212367","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Mbeya","addressCountry":"","dateofbirth":"1997-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"70","lastupdated":"2018-07-26 12:28:00"}]}}
+2018-07-26 12:50:11 
+2018-07-26 12:55:32 {"xxtransid":"507019612251","reference":"572101143507","responseCode":501,"Message":{"status":"ERROR","method":"nameLookup","data":{"resultcode":"501","result":"invalid"}}}
+2018-07-26 12:55:32 
+2018-07-26 12:55:54 {"xxtransid":"615403112151","reference":"211332891711","responseCode":501,"Message":{"status":"ERROR","method":"nameLookup","data":{"resultcode":"501","result":"[\"accountNo may not be empty nameLookup\"]"}}}
+2018-07-26 12:55:54 
+2018-07-26 12:58:55 {"xxtransid":"210111371815","reference":"294814121222","responseCode":501,"Message":{"status":"ERROR","method":"nameLookup","data":{"resultcode":"501","result":"accountNo may not be empty nameLookup"}}}
+2018-07-26 12:58:55 
+2018-07-26 13:00:02 1
+2018-07-26 13:02:41 {"transid":"724810622572","reference":"584292411111","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Mbeya","addressCountry":"","dateofbirth":"1997-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"70","lastupdated":"2018-07-26 12:28:00"}]}}
+2018-07-26 13:02:41 
+2018-07-26 13:03:14 1
+2018-07-26 13:07:37 {"transid":null,"reference":"254782324512","responseCode":501,"Message":{"status":"ERROR","method":"nameLookup","data":{"resultcode":"501","result":"msisdn may not be emptytransid may not be empty"}}}
+2018-07-26 13:07:37 
+2018-07-26 13:08:59 {"transid":null,"reference":"462834197521","responseCode":501,"Message":{"status":"ERROR","method":"nameLookup","data":{"resultcode":"501","result":"msisdn may not be emptytransid may not be empty"}}}
+2018-07-26 13:08:59 
+2018-07-26 13:12:47 1
+2018-07-26 13:13:59 {"iss":"Selcom Transsnet API","timestamp":"2018-07-06 12:14:33","method":"nameLookup","requestParams":{"accountNo":"10"}}
+2018-07-26 13:18:18 {"iss":"Selcom Transsnet API","timestamp":"2018-07-06 12:14:33","method":"nameLookup","requestParams":{"accountNo":"10"}}
+2018-07-26 13:18:40 {"iss":"Selcom Transsnet API","timestamp":"2018-07-06 12:14:33","method":"nameLookup","requestParams":{"transid":"489132201225","msisdn":"255789654700","accountNo":"10"}}
+2018-07-26 13:19:39 {"transid":"132322172981","reference":"092011282445","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Mbeya","addressCountry":"","dateofbirth":"1997-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"70","lastupdated":"2018-07-26 12:28:00"}]}}
+2018-07-26 13:19:39 
+2018-07-26 13:20:35 {"iss":"Selcom Transsnet API","timestamp":"2018-07-06 12:14:33","method":"nameLookup","requestParams":{"transid":"242428365021","msisdn":"255789654700","accountNo":"10"}}
+2018-07-26 13:22:04 {"transid":"512125224111","reference":"104991510182","responseCode":200,"Message":{"status":"SUCCESS","method":"nameLookup","data":[{"firstName":"Salma","lastName":"Kanji Lalji","tier":"","customerNo":"255789654700","accountNo":"10","msisdn":"255789654700","statustxt":"true","activetxt":"true","email":"","addressLine1":"","addressCity":"Mbeya","addressCountry":"","dateofbirth":"1997-01-10","state":"ON","gender":"","nationality":"","currency":"TZS","balance":"70","lastupdated":"2018-07-26 12:28:00"}]}}
+2018-07-26 13:22:04 
