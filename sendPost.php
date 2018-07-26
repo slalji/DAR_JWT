@@ -16,9 +16,7 @@ $openAccount = '{
 		"addressCity": "Tunduma",
 		"addressCountry": "Tanzania",
 		"dob": "1987-04-10",
-		"currency": "TZS",
-
-
+		"currency": "TZS"
 	}
 }';
 $updateAccount =' {
@@ -194,7 +192,7 @@ $cashin = '{
   }
 }';
 
-$data = $nameLookup;
+$data = $openAccount;
 $bearer = Token::sign($data);
 
 

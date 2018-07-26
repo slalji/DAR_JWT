@@ -62,7 +62,7 @@ class Transactions
             $message = array();
             $message['status']="ERROR";
             $message['method']='updateAccount';//.$e->getMessage();
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='500';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             
@@ -101,7 +101,7 @@ class Transactions
             $message = array();
             $message['status']="ERROR";
             $message['method']='updateAccount';//.$e->getMessage()." : ".$sql;
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='500';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data['transid'],$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -415,10 +415,12 @@ public function  _checkTcard($accountNo){
 }
     public function openAccount($data)   {
         //check for required fields eg accountNo, msisdn, fname lname
-        $err = Validate::openAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
-        if (!empty($err))
-            return DB::getErrorResponse($data, $err, $this->reference);
         try{
+            $err = Validate::openAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
+            if (!empty($err))
+            throw new Exception($err);
+            //return DB::getErrorResponse($data, $err, $this->reference);
+        
 
             $payload = (array)$data;    
             $payload['accountNo'] = 'PALMPAY'.DB::getToken(12);       
@@ -434,16 +436,14 @@ public function  _checkTcard($accountNo){
                 throw new Exception($error);
             }
            
-            //add to transactions DB
-            //$this->addTransaction($payload);
-            //$payload['accountNo'] = $last_id;
-            //$payload['accountNo'] = 'PALMPAY' . 
-            //add to accountProfile DB
             $this->_addAccountProfile($payload);
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="openAccount";
-            $message['data']=$payload;
+            //$message['data']=$payload;
+            $result['resultcode'] ='200';
+            $result['result']=$payload;
+            $message['data']=$result;
             
             $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
         }
@@ -494,7 +494,9 @@ public function  _checkTcard($accountNo){
         $message = array();
         $message['status']="SUCCESS";
         $message['method']="updateAccount";
-        $message['data']=$payload;
+        $result['resultcode'] ='200';
+        $result['result']=$payload;
+        $message['data']=$result;
         $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
     
         return (json_encode($respArray));
@@ -526,7 +528,9 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="linkAccount";
-            $message['data']=$payload;
+            $result['resultcode'] ='200';
+            $result['result']=$payload;
+            $message['data']=$result;
             $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
         
             }catch (Exception $e) {
@@ -590,7 +594,10 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="linkAccount";
-            $message['data']="successfully unlinked Account from TPAY";
+            $payload="successfully unlinked Account from TPAY";
+            $result['resultcode'] ='200';
+            $result['result']=$payload;
+            $message['data']=$result;
             $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
         
         }catch (Exception $e) {
@@ -630,13 +637,15 @@ public function  _checkTcard($accountNo){
             $state = $this->_pdoBindArray($stmt,$payload);            
             $state->execute();            
           
-            $result = $state->fetchAll(PDO::FETCH_ASSOC);
+            $payload = $state->fetchAll(PDO::FETCH_ASSOC);
             
             //$json = json_encode($arr);
             
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="nameLookup";
+            $result['resultcode'] ='200';
+            $result['result']=$payload;
             $message['data']=$result;
             if (empty($result)){
                 $error="account does not exist";
@@ -674,7 +683,7 @@ public function  _checkTcard($accountNo){
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);            
             $state->execute();
-            $result = $state->fetchAll(PDO::FETCH_ASSOC);            
+            $payload = $state->fetchAll(PDO::FETCH_ASSOC);            
            
             $payload['reference']=$this->reference;
           
@@ -685,6 +694,8 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="transactionLookup";
+            $result['resultcode'] ='200';
+            $result['result']=$payload;
             $message['data']=$result;
         
             $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
@@ -885,7 +896,9 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="SUCCESS";
             $message['method']="updateAccountStatus";
-            $message['data']=$payload;
+            $result['resultcode'] ='200';
+            $result['result']=$payload;
+            $message['data']=$result;
 
             $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
         

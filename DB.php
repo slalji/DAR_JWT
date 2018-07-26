@@ -133,7 +133,7 @@ class DB extends PDO {
             //case 'exGratiaPayments': $response = ( $transaction->ExGratiaPayments($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'checkBalance': $response = ( $transaction->checkBalance($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'getStatement': $response = ( $transaction->getStatement($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
-            default: return json_encode($response = ["transid"=>"","reference"=>"","responseCode"=>"401","Message"=>["status"=>"ERROR","method"=>"","data"=>"invalid command method found: ".$method]]);
+            default: return json_encode($response = ["transid"=>"","reference"=>"","responseCode"=>"404","Message"=>["status"=>"ERROR","method"=>"","data"=>"invalid command method found: ".$method]]);
             
             
         }

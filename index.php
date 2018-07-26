@@ -11,8 +11,9 @@ $err = array();
 $body = (json_decode(file_get_contents('php://input')));
 
 $db = new DB();
-if ($body){
-       
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
+        echo isset($body);  
         //Check for Duplicate (if transId exists: reject)
 
         $err = Validate::valid($body);
@@ -51,7 +52,7 @@ if ($body){
                 $message = array();
                 $message['status']="ERROR";
                 $message['method']='';//.$e->getMessage()." : ";//.$sql;
-                $result['resultcode'] ='404';
+                $result['resultcode'] ='401';
                 $result['result']='Authorization Failure';
                 $message['data']=$result;
                 $respArray = ['transid'=>'','reference'=>'','responseCode' => 501, "Message"=>($message)];
@@ -64,9 +65,21 @@ if ($body){
 
 }
 else{
-       // {"transid":"237460350122","0":"221229112215","responseCode":501,"Message":{"status":"ERROR","method":"Transaction error at: cashin SQLSTATE[42S02]: Base table or view not found: 1146 Table 'card.tariff' doesn't exist"}}
-        $err = ["transid"=>"","reference"=>"","responseCode"=>"412","Message"=>["status"=>"ERROR","method"=>"","data"=>"invalid parameter JSON format, Missing Parameters",]];
+        $message = array();
+        $message['status']="ERROR";
+        $message['method']='';//.$e->getMessage()." : ";//.$sql;
+        $result['resultcode'] ='412';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST')
+                $result['result']='Invalid JSON Format or Missing Parameters';
+        else if (!isset($body))
+                $result['result']='Invalid JSON';
+        else
+                $result['result']='HTTP 401 NOT FOUND';    
+        $message['data']=$result;
+        
+        $err = ["transid"=>"","reference"=>"","responseCode"=>"412","Message"=>["status"=>"ERROR","method"=>"","message"=>$message]];
         print_r(json_encode($err));
+        //print_r('HTTP 401 NOT FOUND');
 }
 
 
