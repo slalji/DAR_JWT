@@ -11,9 +11,8 @@ $err = array();
 $body = (json_decode(file_get_contents('php://input')));
 
 $db = new DB();
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
-        echo isset($body);  
+       
         //Check for Duplicate (if transId exists: reject)
 
         $err = Validate::valid($body);
@@ -52,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
                 $message = array();
                 $message['status']="ERROR";
                 $message['method']='';//.$e->getMessage()." : ";//.$sql;
-                $result['resultcode'] ='401';
+                $result['resultcode'] ='404';
                 $result['result']='Authorization Failure';
                 $message['data']=$result;
                 $respArray = ['transid'=>'','reference'=>'','responseCode' => 501, "Message"=>($message)];
@@ -65,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
 
 }
 else{
+        
         $message = array();
         $message['status']="ERROR";
         $message['method']='';//.$e->getMessage()." : ";//.$sql;
@@ -78,7 +78,7 @@ else{
         $message['data']=$result;
         
         $err = ["transid"=>"","reference"=>"","responseCode"=>"412","Message"=>["status"=>"ERROR","method"=>"","message"=>$message]];
-        print_r(json_encode($err));
+        print_r(json_encode($result));
         //print_r('HTTP 401 NOT FOUND');
 }
 

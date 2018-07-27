@@ -3,28 +3,31 @@
 require_once ("jwt_encode.php");
 require_once ("DB.php");
 
-$openAccount = '{
+
+$openAccount ='{
 	"iss": "Selcom Transsnet API",
 	"timestamp": "2018-07-06 12:14:33",
 	"method": "openAccount",
 	"requestParams": {
-		"customerNo": "255754200204",
-		"msisdn": "255754200204"
-		"transid": "01052018161000",
+    "transid": "'.DB::getToken(12).'",
 		"firstName": "David",
 		"lastName": "Beckham",
-		"addressCity": "Tunduma",
+		"addressCity": "Iringa",
 		"addressCountry": "Tanzania",
-		"dob": "1987-04-10",
-		"currency": "TZS"
+		"dob": "1977-01-10",
+		"currency": "TZS",
+		"customerNo": "255789654204",
+		"msisdn": "255789654204"
+		
 	}
-}';
+}
+';
 $updateAccount =' {
 	"iss": "Selcom Transsnet API",
 	"timestamp": "2018-07-06 12:14:33",
 	"method": "updateAccount",
 	"requestParams": {
-		"transid": "01052018161212",
+    "transid": "'.DB::getToken(12).'",
 		"addressCity": "Dodoma",
 		"dob": "1998-01-10",
 		"customerNo": "255789654700",
@@ -192,13 +195,13 @@ $cashin = '{
   }
 }';
 
-$data = $openAccount;
+$data = $transactionLookup;
 $bearer = Token::sign($data);
 
 
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => "http://127.0.0.1/selcomJWT/",
+  CURLOPT_URL => "http://127.0.0.1/transsnet/",
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => "",
   CURLOPT_MAXREDIRS => 10,
