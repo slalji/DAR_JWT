@@ -121,7 +121,7 @@ class DB extends PDO {
             case 'openAccount':$response = ( $transaction->OpenAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'updateAccount':$response = ($transaction->UpdateAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'cashin': $response = ( $transaction->cashin($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
-            case 'payUtility': $response = ( $transaction->payUtility($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
+            case 'payutility': $response = ( $transaction->payutility($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'fundTransfer': $response = ( $transaction->transferFunds($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'nameLookup':$response = ($transaction->NameLookup($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
@@ -130,7 +130,7 @@ class DB extends PDO {
             case 'changeStatus': $response = ( $transaction->updateAccountStatus($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'requestCard': $response = ( $transaction->requestCard($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'search': $response = ( $transaction->search($data)); print_r($response);  break;
-            //case 'exGratiaPayments': $response = ( $transaction->ExGratiaPayments($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
+            //case 'payutility': $response = ( $transaction->ExGratiaPayments($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'checkBalance': $response = ( $transaction->checkBalance($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             case 'getStatement': $response = ( $transaction->getStatement($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsetlog.log"); break;
             default: return json_encode($response = ["transid"=>"","reference"=>"","responseCode"=>"401","Message"=>["status"=>"ERROR","method"=>"","data"=>"invalid command method found: ".$method]]);

@@ -1,5 +1,4 @@
 <?php
-//chdir(dirname(__DIR__));
 
 include_once('vendor\custom\JWT.php'); 
 include_once('config.php');
@@ -13,18 +12,10 @@ $body = (json_decode(file_get_contents('php://input')));
 $db = new DB();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
        
-        //Check for Duplicate (if transId exists: reject)
-
         $err = Validate::valid($body);
        
-        if (!empty($err) && $err!="" ){
-                
-               /* //echo ('err:'.json_encode($err));
-                $response = ["transid"=>$body->requestParams->transid,"reference"=>"","responseCode"=>"402","Message"=>["status"=>"ERROR","method"=>"","data"=>json_encode($err)]];
-               // print_r($response);
-                error_log("\r\n".date('Y-m-d H:i:s').' '.print_r($response), 3, "transsetlog.log");
-                return json_encode($response);
-                */
+        if (!empty($err) && $err!="" ){                
+               
                 $message = array();
                 $message['status']="ERROR";
                 $message['method']='';//.$e->getMessage()." : ";//.$sql;
