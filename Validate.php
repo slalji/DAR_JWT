@@ -77,8 +77,11 @@ class Validate
 
 
                 if ($bearer) {
-
-                    $publicKey = file_get_contents('rsa_public_key.pem', true);
+                    if($_SERVER['REMOTE_ADDR'] == '192.168.24.52' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1'){
+                        $publicKey = file_get_contents(PUBLIC_KEY_DEBUG, true);
+                    }
+                    else
+                        $publicKey = file_get_contents(PUBLIC_KEY_FILENAME, true);
                 // if JWT invalid throw exception
                     JWT::decode($bearer, $publicKey, array('RS256'));
                     return true;
@@ -206,6 +209,39 @@ class Validate
         return $flag;
 
     }
+    public static function _checkCard($msisdn){
+
+        $data = isset($err) ? $err :false;
+        try{
+            $db = new DB();
+            $sql ="select status, state, active  from card where msisdn='".$msisdn."'";
+            $stmt = $db->conn->prepare( $sql );
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($result){
+                $res = $result[0];
+           
+                if ($res['active'] == 1)
+                    return 'inactive';
+                else  if ($res['status'] == 0)
+                    return 'inactive';
+                else  if ($res['state'] != 'ON')
+                    return 'inactive';
+                else  if ($res['status'] == 'D')
+                    return 'delete';
+                else
+                    return 'active';
+                }
+            else
+                throw new Exception('invalid');
+            
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+            
+
+    }
 
     public static function setTinfo($payload){
 
@@ -307,8 +343,9 @@ class Validate
             $err[]='transid may not be empty';
         }
 
-        $data = isset($err) ? $err :false;
-
+        $data='';
+        foreach($err as $e)
+            $data .=$e.'';
         return ($data);
     }
     public static function nameLookup($payload) {
@@ -316,9 +353,7 @@ class Validate
         if (!isset($payload->accountNo) || empty($payload->accountNo))  {
             $err[]='accountNo may not be empty nameLookup';
         }
-        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='msisdn may not be empty';
-        }
+        
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
@@ -344,8 +379,9 @@ class Validate
             $err[]='transid may not be empty';
         }
 
-        $data = isset($err) ? $err :false;
-
+        $data='';
+        foreach($err as $e)
+            $data .=$e.'';
         return ($data);
     }
     public static function transactionLookup($payload){
@@ -365,8 +401,9 @@ class Validate
             $err[]='this transaction does not exist';
         }
 
-        $data = isset($err) ? $err :false;
-
+        $data='';
+        foreach($err as $e)
+            $data .=$e.'';
         return ($data);
     }
     public static function transferFunds($payload)    {
@@ -377,8 +414,8 @@ class Validate
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-        if (!isset($payload->toAccountNo) || empty($payload->toAccountNo)) {
-            $err[]='toAccountNo may not be empty';
+        if (!isset($payload->utilityref) || empty($payload->utilityref)) {
+            $err[]='utilityref may not be empty';
         }
         if (!isset($payload->amount) || empty($payload->amount)) {
             $err[]='amount may not be empty';
@@ -387,10 +424,9 @@ class Validate
             $err[]='currency may not be empty';
         }
 
-
-
-        $data = isset($err) ? $err :false;
-
+        $data='';
+        foreach($err as $e)
+            $data .=$e.'';
         return ($data);
     }
     public static function enquiry($payload) {
@@ -406,15 +442,15 @@ class Validate
             $err[]='duplicate transaction';
         }
         */
-        $data = isset($err) ? $err :false;
-
+        $data='';
+        foreach($err as $e)
+            $data .=$e.'';
         return ($data);
     }
     public static function accountState($payload) {
         $err = array();
-        if (!isset($payload->accountNo) || empty($payload->accountNo))
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='accountNo or msisdn may not be empty';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            $err[]='accountNo may not be empty';
         }
         if (!isset($payload->statustxt) || empty($payload->statustxt)) {
             $err[]='status may not be empty';
@@ -426,7 +462,10 @@ class Validate
             $err[]='duplicate transaction';
         }
         */
-        $data = isset($err) ? $err :false;
+        $data = '';
+        foreach($err as $e){
+            $data .= $data .' ';
+        }
 
         return ($data);
     }
@@ -443,7 +482,10 @@ class Validate
         if (!isset($payload->amount) || empty($payload->amount)) {
             $err[]='amount may not be empty';
         }
-        $data = isset($err) ? $err :false;
+        $data = '';
+        foreach($err as $e){
+            $data .= $data .' ';
+        }
 
         return ($data);
 
@@ -477,15 +519,17 @@ class Validate
             //die(print_r($err));
         }
 
-       $data = isset($err) ? $err :'';
+        $data = '';
+        foreach($err as $e){
+            $data .= $data .' ';
+        }
 
         return ($data);
     }
     public static function payUtility($payload)    {
         $err = array();
-        if (!isset($payload->customerNo) || empty($payload->customerNo))
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return $err[]='customerNo or msisdn may not be empty';
+        if (!isset($payload->msisdn) || empty($payload->msisdn))  {
+            return $err[]='msisdn may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -503,17 +547,15 @@ class Validate
             $err[]='currency may not be empty';
         }
 
-
-
-        $data = isset($err) ? $err :false;
-
-        return ($data);
+        $data = '';
+        foreach($err as $e){
+            $data .= $data .' ';
+        }
     }
     public static function cashin($payload)    {
         $err = array();
-        if (!isset($payload->accountNo) || empty($payload->accountNo))
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return $err[]='accountNo or msisdn may not be empty';
+        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return $err[]='msisdn may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -522,21 +564,18 @@ class Validate
         if (!isset($payload->amount) || empty($payload->amount)) {
             $err[]='amount may not be empty';
         }
-        if (!isset($payload->currency) || empty($payload->currency)) {
-            $err[]='currency may not be empty';
+        
+
+        $data = '';
+        foreach($err as $e){
+            $data .= $data .' ';
         }
-
-
-
-        $data = isset($err) ? $err :false;
-
         return ($data);
     }
     public static function linkAccount($payload)    {
         $err = array();
-        if (!isset($payload->accountNo) || empty($payload->accountNo))
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return $err[]='accountNo or msisdn may not be empty';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            return $err[]='accountNo may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -555,8 +594,9 @@ class Validate
             $err[]='bank account number may not be empty';
         }
 
-        $data = isset($err) ? $err :false;
-
+        $data='';
+        foreach($err as $e)
+            $data .=$e.'';
         return ($data);
     }
 
