@@ -77,7 +77,7 @@ class Validate
 
 
                 if ($bearer) {
-                    if($_SERVER['REMOTE_ADDR'] == '192.168.24.52' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1'){
+                    if($_SERVER['REMOTE_ADDR'] == '192.168.24.52' || $_SERVER['REMOTE_ADDR'] == '10.10.0.2'){
                         $publicKey = file_get_contents(PUBLIC_KEY_DEBUG, true);
                     }
                     else
@@ -89,7 +89,9 @@ class Validate
                 else{
                     header('HTTP/1.0 401 Unauthorized');
                     //echo('HTTP/1.0 401 Unauthorized'/*.$e*/);
-                    $err ="Authentication Invalid";
+                    $err ="Authentication Invalid code 101";
+                    error_log("\r\n".date('Y-m-d H:i:s').' bearer not found', 3, "transsnet.log");
+        
                     throw new Exception($err);
                 }
             }
@@ -97,7 +99,7 @@ class Validate
             else{
                 header('HTTP/1.0 401 Unauthorized');
                 //echo('HTTP/1.0 401 Unauthorized'/*.$e*/);
-                $err ="Authentication missing";
+                $err ="Authentication missing code 102";
                 throw new Exception($err);
             }
         /*}
@@ -120,7 +122,7 @@ class Validate
             $message['status']="ERROR";
             $message['method']='';//.$e." : ";//.$sql;
             $result['resultcode'] ='401';
-            $result['result']=$e->getMessage();
+            $result['result']='code 103'.$e->getMessage();
             $message['data']=$result;
 
         $respArray = ['transid'=>'','reference'=>'','responseCode' => 401, "Message"=>($message)];
@@ -285,11 +287,11 @@ class Validate
         }
 
     }
-    public static function _checkTransid($transid){
+    public static function _checkTransid($transid, $msisdn){
 
         $data = isset($err) ? $err :false;
             $db = new DB();
-            $sql ="select id, transid  from transaction where transid='".$transid."'";
+            $sql ="select id, transid  from transaction where transid='".$transid."' && msisdn='".$msisdn."'";
             $stmt = $db->conn->prepare( $sql );
             $stmt->execute();
             $result = $stmt->fetchAll();
@@ -305,7 +307,7 @@ class Validate
                 $err[]='transid may not be empty';
             }
             if (!isset($payload->customerNo) || empty($payload->customerNo)) {
-                $err[]='customerNo may not be empty';
+                return 'customerNo may not be empty';
             }
             if (!isset($payload->firstName) || empty($payload->firstName )) {
                 $err[]='firstName may not be empty';
@@ -389,15 +391,15 @@ class Validate
 
         if (!isset($payload->accountNo) || empty($payload->accountNo))
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            $err[]='accountNo or msisdn may not be empty';
+            return 'accountNo or msisdn may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
         if (!isset($payload->transref) || empty($payload->transref)) {
-            $err[]='transRef may not be empty. transref is the transaction id you would like to lookup, where as transid is this current transaction';
+            return 'transref may not be empty. transref is the transaction id you would like to lookup, where as transid is this current transaction';
         }
-        if (!Validate::_checkTransid($payload->transref)) {
+        if (!Validate::_checkTransid($payload->transref, $payload->msisdn)) {
             $err[]='this transaction does not exist';
         }
 
@@ -415,7 +417,7 @@ class Validate
             $err[]='transid may not be empty';
         }
         if (!isset($payload->utilityref) || empty($payload->utilityref)) {
-            $err[]='utilityref may not be empty';
+            return 'utilityref may not be empty';
         }
         if (!isset($payload->amount) || empty($payload->amount)) {
             $err[]='amount may not be empty';
@@ -453,7 +455,7 @@ class Validate
             $err[]='accountNo may not be empty';
         }
         if (!isset($payload->statustxt) || empty($payload->statustxt)) {
-            $err[]='status may not be empty';
+           return 'status may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';

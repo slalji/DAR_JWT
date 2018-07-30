@@ -44,7 +44,7 @@ $transferFunds='{
   "method": "fundTransfer",
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
-    "toAccountNo": "255754200200",
+    "utilityref": "255789654555",
     "amount": "10",
     "accountNo": "10",
     "currency": "TZS"
@@ -58,7 +58,7 @@ $transfundsWithinfo='{
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
     "accountNo": "10",
-    "toAccountNo": "255754200200",
+    "utilityref": "255754200200",
     "transtype": "fee",
     "geocode": {"lat":"-6.802353","lng":"39.279556"},
     "amount": "10",
@@ -72,8 +72,8 @@ $nameLookup='{
   "method": "nameLookup",
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
-    "msisdn": "255789654700",
-    "accountNo": "10"
+    "msisdn": "255789654555",
+    "accountNo": "9"
   }
 }';
 $transactionLookup='{
@@ -82,7 +82,7 @@ $transactionLookup='{
 	"method": "transactionLookup",
 	"requestParams": {
 		"transid": "'.DB::getToken(12).'",
-    "transref": "01052018161002",
+    "transref": "411053821712",
     "msisdn": "255789654700",
     "accountNo": "10"
 	}
@@ -95,7 +95,7 @@ $checkBalance='
   "method": "checkBalance",
   "requestParams": {
     "transid": "010520181610210",
-    "msisdn": "255789654555",
+    "msisdn": "255789654700",
     "accountNo": "10"
   }
 }
@@ -108,7 +108,7 @@ $getStatement='
   "method": "getStatement",
   "requestParams": {
     "transid": "010520181610210",
-    "msisdn": "255789654555",
+    "msisdn": "255789654700",
     "accountNo": "10"
   }
 }';
@@ -148,10 +148,8 @@ $changeState ='
 	"method": "changeStatus",
 	"requestParams": {
     "transid": "'.DB::getToken(12).'",
-		"statustxt": "close",
-		"accountNo": "10",
-		"msisdn": "255789654555"
-
+		"statustxt": "open",
+		"accountNo": "10"
 	}
 }';
 $requestCard ='
@@ -174,10 +172,7 @@ $search ='
 	"method": "search",
 	"requestParams": {
     "transid": "'.DB::getToken(12).'",
-    "search": "\"responseCode\":501",
-    "name": "Salma Kanji Lalji",
-    "msisdn": "255789654700",
-    "accountNo": "10"
+    "search": "transferFunds"
 
 	}
 }';
@@ -188,14 +183,38 @@ $cashin = '{
   "requestParams": {
     "transid": "'.DB::getToken(12).'",
     "msisdn": "255789654700",
-    "accountNo": "10",
-    "utilityref":"255789654555",
-    "amount":"10",
-    "currency":"TZS"
+    "amount":"10"
   }
 }';
 
-$data = $transactionLookup;
+$payutility = '{
+  "iss": "Selcom Transsnet API",
+  "timestamp": "2018-07-06 12:14:33",
+  "method": "payutility",
+  "requestParams": {
+    "transid": "'.DB::getToken(12).'",
+    "msisdn": "255789654700",
+    "utilitycode":"AZAMTV",
+    "utilityref": "255789654700",
+    "amount":"10"
+  }
+}';
+$test =' {
+  "iss": "Selcom Transsnet API",
+  "timestamp": "2018-07-06 12:14:33",
+  "method": "openAccount",
+  "requestParams": {
+  "addressCity": "shenzhen",
+"addressCountry": "china",
+"addressLine1": "shenzhen",
+"currency": "TZS",
+"firstName": "yin",
+"lastName": "qi",
+"msisdn": "255758238772",
+"transid": "99991532920151320"
+}
+}';
+$data =  $openAccount ;
 $bearer = Token::sign($data);
 
 

@@ -832,12 +832,13 @@ class DbHandler{
 		$query = "SELECT balance, msisdn, id, name, language, NOW(), status, state, card, active, stolen, dailytrans, last_transaction, holdinglimit, dailylimit, tier FROM card WHERE (msisdn='$utilityref' OR card='$utilityref')";
 
 		$row = $this->pdo_db->query($query)->fetch();
-
+		
 		$status = $row['status'];
 		$stolen = $row['stolen'];
 		$balance = $row['balance'];
 
 		if($status!=1){
+			
 			$response['resultcode'] = "045";
 			$response['result'] = "Card blocked";
 		}elseif($stolen=="1"){
@@ -849,6 +850,7 @@ class DbHandler{
 			$response['reserved'] = 0.0;
 			$response['available']  = $balance;
 		}
+		
 		return $response;
 	}
 
