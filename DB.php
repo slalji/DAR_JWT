@@ -77,14 +77,13 @@ class DB extends PDO {
            return date('Y-m-d',$dt);
         }
     }
-    public static function getErrorResponse($data, $err, $ref){
-            $message = array();
-            $message['status']="Internal Server Error";
-            //$message['method']="openAccount";
-            $message['data']=($err);
-            $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 500, "Message"=>($message)];
-
-           return json_encode($respArray); 
+    public static function response($transid, $message, $code, $result){
+        $transid = $data->transid;
+        $message= $err;
+        $resultCode = $code;
+        $result =$result;
+        $respArray = ['transid'=>$transid,'message'=>$message,'responseCode' => $code, "result"=>$result];
+        return json_encode($respArray); 
     }
     public function incoming($data) {
        

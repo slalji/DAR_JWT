@@ -1,6 +1,6 @@
 <?php
 
-//namespace Firebase\JWT;
+namespace Firebase\JWT;
 
 require_once ("BeforeValidException.php");
 require_once ("ExpiredException.php");
