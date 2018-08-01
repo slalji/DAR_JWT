@@ -205,6 +205,13 @@ class Transactions
         return ($result[0]);
 
     }
+    public function _getCustomerProfile($accountNo){
+        $sql3 ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'close\'),1,\'open\') AS statustxt,  lastupdated from accountprofile  where accountNo="'.$accountNo.'"';
+            $stmt3 = $this->conn->query($sql3);
+
+            $res = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+            return $res;
+    }
     public function _getResponse($method, $res, $transid,$ref){
         $message = array();
         $message['status']= 'SUCCESS';
@@ -442,7 +449,10 @@ public function  _checkTcard($accountNo){
             }
 
             $this->_addAccountProfile($payload);
-            $res[0]=$payload;
+           $res= _getCustomerProfile($accountNo);
+           // $res[0]=$payload;
+
+           
            /* $message = array();
             $message['status']="SUCCESS";
             $message['method']="openAccount";

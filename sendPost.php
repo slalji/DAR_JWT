@@ -196,7 +196,7 @@ $payutility = '{
     "msisdn": "255789654700",
     "utilitycode":"AZAMTV",
     "utilityref": "255789654700",
-    "amount":"10" 
+    "amount":"10"
   }
 }';
 $test =' {
