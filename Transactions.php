@@ -25,7 +25,7 @@ class Transactions
         foreach ($paArray as $k=>$v){
 
             @$poStatement->bindValue(':'.$k,$v);
-           
+
 
         } // foreach
         return $poStatement;
@@ -34,13 +34,11 @@ class Transactions
 
         $payload = (array)$data;
         $arr = null;
-        $customer = $payload['accountNo'];//$this->_getAccountNo($data['customerNo']);
+        $customer = $this->_getAccountNo($data['customerNo']);
 
         $transid=$data['transid'];
         unset($payload['transid']);
         unset($payload['customerNo']);
-        unset($payload['accountNo']);
-        $sql='';
         try{
 
             foreach($payload as $key => $val){
@@ -55,9 +53,7 @@ class Transactions
 
             $stmt = $this->conn->prepare( $sql );
             $state = $this->_pdoBindArray($stmt,$payload);
-            
             $state->execute();
-           
             return  $customer;
 
 
@@ -67,7 +63,7 @@ class Transactions
             $message['status']="ERROR";
             $message['method']='updateAccount';//.$e->getMessage();
             $result['resultcode'] ='501';
-            $result['result']=$e->getMessage().' '.$sql;
+            $result['result']=$e->getMessage();
             $message['data']=$result;
 
             $respArray = ['transid'=>$data['transid'],$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -493,7 +489,7 @@ public function  _checkTcard($accountNo){
                     default: 'A';
                 }
 
-                $query = "UPDATE card SET tier='$tier' WHERE accountNo='$customer'";
+                $query = "UPDATE card SET tier='$tier' WHERE id=$customer";
                 $this->conn->query($query);
             }
 
@@ -522,7 +518,7 @@ public function  _checkTcard($accountNo){
             $message['status']="ERROR";
             $message['method']='updateAccount';//.$e->getMessage()." : ";
             $result['resultcode'] ='501';
-            $result['result']='Check JSON payload syntax for invalid parameters '.$e->getMessage();
+            $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
@@ -1186,7 +1182,7 @@ public function  _checkTcard($accountNo){
                 $payload = (array)$data;
                 $today=date('Y-m-d H:i:s');;
                 $res = array();
-                $res['fulltimestamp'] = DB::toDateTime($today);
+                $res['fulltimestamp'] = $today;
                 //$payload['customerNo'] = $request['customerNo'];
                 $res['accountNo'] = $payload['accountNo'];
                 //$res['name'] = $payload['name'];
@@ -1195,7 +1191,7 @@ public function  _checkTcard($accountNo){
                 //$i=0;
                 do {
                     //echo $i++;
-                    $card = '1912'.DB::getToken(12);
+                    $card = DB::getToken(16);
                 } while ($this->_checkLuhn($card));
                 //die ($card.' : '.$this->_checkLuhn($card));
 
@@ -1208,8 +1204,8 @@ public function  _checkTcard($accountNo){
 
                 $res['registeredby'] = 'SelcomTranssnetAPI';
                 $res['confirmedby'] = 'SelcomTranssnetAPI';
-                $res['registertimestamp'] = DB::toDateTime($today);
-                $res['confirmtimestamp'] = DB::toDateTime($today);
+                //$res['registertimestamp'] = $today;
+                //$res['confirmtimestamp'] =  $today;
                 $res['active'] = 0;
                 $res['status'] = 1;
                 $res['reference'] = $this->reference;//request['reference'];
@@ -1227,21 +1223,19 @@ public function  _checkTcard($accountNo){
 
                         $cols.=$key.', ';
                         $vals.=':'.$key.', ';
-                        //error_log("\r\n".date('Y-m-d H:i:s').' '.json_encode(':'.$key.', '.$val), 3, "binding.log");
                 }
                 $cols = rtrim($cols,', ');
                 $vals = rtrim($vals,', ');
 
 
                 $sql ="INSERT INTO tcard (".$cols.") VALUES (".$vals.")";
-               
-                $stmt = $this->conn->prepare( $sql );
+                //die(print_r($res));
+                $stmt = $this->conn->query( $sql );
                 $state = $this->_pdoBindArray($stmt,$res);
-               
                 $state->execute();
 
                 $id = $this->conn->lastInsertId();
-                $sql2 = "select name, msisdn, card, cvv, exp, accountNo from tcard where id=".$id;
+                $sql2 = "select name, msisdn, card, cvv, expiry, accountNo from tcard where id=".$id;
                 $stmt2 =  $this->conn->query( $sql2 );
                 $row[0] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                /* $message = array();

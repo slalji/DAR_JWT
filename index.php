@@ -10,8 +10,6 @@ $err = array();
 $body = (json_decode(file_get_contents('php://input')));
 
 $db = new DB();
-//error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($body), 3, "transsnet.log");
-        
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
        
         $err = Validate::valid($body);
@@ -37,8 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
                 $response = $db->transaction($body->requestParams,$method);
                 $json = json_encode($response);
                 print_r($response);
-                error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");
-                return ($response);
+                error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$json, 3, "transsnet.log");
+                return ($json);
 
         }
         else{
@@ -58,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
 
 }
 else{
-        error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' body:'.json_encode($body).' header:'.json_encode($headers), 3, "transsnet.log");
+        error_log("\r\n".date('Y-m-d H:i:s').' '.json_encode($body), 3, "transsnet.log");
         $message = array();
         $message['status']="ERROR";
         $message['method']='';//.$e->getMessage()." : ";//.$sql;
@@ -66,13 +64,13 @@ else{
         if ($_SERVER['REQUEST_METHOD'] === 'POST')
                 $result['result']='Invalid JSON Format or Missing Parameters code 106';
         else if (!isset($body))
-                $result['result']='Invalid JSON code 107 '.$_SERVER['REMOTE_ADDR'].' '.json_encode($_POST).' '.json_encode($body);
+                $result['result']='Invalid JSON code 107 '.$_SERVER['REMOTE_ADDR'].' '.json_encode($_REQUEST);
         else
                 $result['result']='HTTP 401 NOT FOUND code 108';    
         $message['data']=$result;
         
         $err = ["transid"=>"","reference"=>"","responseCode"=>"412","Message"=>["status"=>"ERROR","method"=>"","message"=>$message]];
-        error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($result), 3, "transsnet.log");
+        error_log("\r\n".date('Y-m-d H:i:s').' '.json_encode($result), 3, "transsnet.log");
         print_r(json_encode($result));
         //print_r('HTTP 401 NOT FOUND');
 }
