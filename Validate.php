@@ -77,7 +77,7 @@ class Validate
 
 
                 if ($bearer) {
-                    if($_SERVER['REMOTE_ADDR'] == '192.168.24.52' || $_SERVER['REMOTE_ADDR'] == '10.10.0.2'){
+                    if($_SERVER['REMOTE_ADDR'] == '127.0.0.1' || $_SERVER['REMOTE_ADDR'] == '192.168.24.52' || $_SERVER['REMOTE_ADDR'] == '10.10.0.2'){
                         $publicKey = file_get_contents(PUBLIC_KEY_DEBUG, true);
                     }
                     else
@@ -136,20 +136,30 @@ class Validate
 
 
 
-
-
-    public static function check($acctNo){
-        $db = new DB();
-        $sql ="select id from accountProfile where accountNo='".$acctNo."'";
-        $stmt = $db->conn->prepare( $sql );
+    public static function checkAccount($acctNo){
+        $conn = DB::getInstance();
+        $sql ="select msisdn from accountprofile where accountNo='".$acctNo."'";
+        $stmt = $conn->prepare( $sql );
         $stmt->execute();
-        if ($stmt->rowCount() > 0)
-            return true;
-        return false;
+        $result = $stmt->fetchColumn();
+        $msisdn = $result;//)?false:$result['msisdn'];      
+      
+         if ($msisdn == ''){
+           
+            return 'account does not exist';
+         } 
+ 
+         $state = Validate::_checkCard($msisdn);
+            if ($state == 'active'){
+                $err[]='this account is '.$state;
+            } 
+         return'';
+       
+       
 
     }
     public static function _getAccountNo($customerNo){
-        $db = new DB();
+       $conn = DB::getInstance();
         $sql ="select accountNo from accountProfile where customerNo ='$customerNo' || msisdn ='$customerNo' ";
 
         $stmt = $db->conn->prepare( $sql );
@@ -160,7 +170,7 @@ class Validate
     }
     public static function _getSuspense($accountNo){
         //get accountNo;
-        $db = new DB();
+       $conn = DB::getInstance();
         //$accountNo = Validate::_getAccountNo($customerNo);
 
         $sql ="select suspense from card where id ='$accountNo'";
@@ -173,7 +183,7 @@ class Validate
     }
     public static function _checkRef($payload){
         //get accountNo;
-        $db = new DB();
+       $conn = DB::getInstance();
         $ref = $payload->reference;
        $flag=true;
         try{
@@ -215,14 +225,14 @@ class Validate
 
         $data = isset($err) ? $err :false;
         try{
-            $db = new DB();
+           $conn = DB::getInstance();
             $sql ="select status, state, active  from card where msisdn='".$msisdn."'";
-            $stmt = $db->conn->prepare( $sql );
+            $stmt = $conn->prepare( $sql );
             $stmt->execute();
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if ($result){
                 $res = $result[0];
-           
+          
                 if ($res['active'] == 1)
                     return 'inactive';
                 else  if ($res['status'] == 0)
@@ -248,7 +258,7 @@ class Validate
     public static function setTinfo($payload){
 
         //get accountNo;
-        $db = new DB();
+       $conn = DB::getInstance();
         $arr =array();
         $col =null;
         $value =null;
@@ -290,9 +300,9 @@ class Validate
     public static function _checkTransid($transid, $msisdn){
 
         $data = isset($err) ? $err :false;
-            $db = new DB();
+           $conn = DB::getInstance();
             $sql ="select id, transid  from transaction where transid='".$transid."' && msisdn='".$msisdn."'";
-            $stmt = $db->conn->prepare( $sql );
+            $stmt = $conn->prepare( $sql );
             $stmt->execute();
             $result = $stmt->fetchAll();
             return $stmt->rowCount();
@@ -320,12 +330,12 @@ class Validate
             }
 
 
-            $db = new DB();
+           $conn = DB::getInstance();
             $sql ="select id from accountProfile where customerNo='".$payload->customerNo."' || msisdn='".$payload->msisdn."'";
             $stmt = $db->conn->prepare( $sql );
             $stmt->execute();
             if ($stmt->rowCount() > 0){
-                $err[] ='Account already exists ' .$payload->customerNo .' '.$payload->msisdn;
+                $err[] ='Account already exists customerNo:' .$payload->customerNo .' msisdn: '.$payload->msisdn;
             }
         }
         catch(Exception $e){
@@ -345,6 +355,11 @@ class Validate
             $err[]='transid may not be empty';
         }
 
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
+
         $data='';
         foreach($err as $e)
             $data .=$e.'';
@@ -353,16 +368,18 @@ class Validate
     public static function nameLookup($payload) {
         $err = array();
         if (!isset($payload->accountNo) || empty($payload->accountNo))  {
-            $err[]='accountNo may not be empty nameLookup';
+            return 'accountNo may not be empty nameLookup';
         }
         
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-       /* if(checkTransid($payload)){
-            $err[]='duplicate transaction';
-        }
-        */
+       
+        $state = self::checkAccount($payload->accountNo);       
+         if ($state != '')
+            $err[]=$state;
+
+       
         $data='';
         foreach($err as $e)
             $data .=$e.'';
@@ -381,6 +398,11 @@ class Validate
             $err[]='transid may not be empty';
         }
 
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
+
         $data='';
         foreach($err as $e)
             $data .=$e.'';
@@ -389,9 +411,11 @@ class Validate
     public static function transactionLookup($payload){
         $err = array();
 
-        if (!isset($payload->accountNo) || empty($payload->accountNo))
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return 'accountNo or msisdn may not be empty';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {          
+            return 'accountNo  may not be empty';
+        }
+        if (!isset($payload->msisdn) || empty($payload->msisdn)) {          
+            return 'msisdn  may not be empty';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
@@ -402,6 +426,10 @@ class Validate
         if (!Validate::_checkTransid($payload->transref, $payload->msisdn)) {
             $err[]='this transaction does not exist';
         }
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
 
         $data='';
         foreach($err as $e)
@@ -425,6 +453,11 @@ class Validate
         if (!isset($payload->currency) || empty($payload->currency)) {
             $err[]='currency may not be empty';
         }
+
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
 
         $data='';
         foreach($err as $e)
@@ -460,10 +493,11 @@ class Validate
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
-        /*if(self::checkTransid($payload->transid)){
-            $err[]='duplicate transaction';
-        }
-        */
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
+
         $data = '';
         foreach($err as $e){
             $data .= $data .' ';
@@ -484,6 +518,11 @@ class Validate
         if (!isset($payload->amount) || empty($payload->amount)) {
             $err[]='amount may not be empty';
         }
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
+
         $data = '';
         foreach($err as $e){
             $data .= $data .' ';
@@ -521,6 +560,11 @@ class Validate
             //die(print_r($err));
         }
 
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
+
         $data = '';
         foreach($err as $e){
             $data .= $data .' ';
@@ -529,10 +573,11 @@ class Validate
         return ($data);
     }
     public static function payUtility($payload)    {
+        //die(print_r($payload));
         $err = array();
-        if (!isset($payload->msisdn) || empty($payload->msisdn))  {
-            return $err[]='msisdn may not be empty';
-        }
+        /*if (!isset($payload->msisdn) || empty($payload->msisdn))  {
+            $err[]='msisdn may not be empty';
+        }*/
         if (!isset($payload->transid) || empty($payload->transid)) {
             $err[]='transid may not be empty';
         }
@@ -548,11 +593,16 @@ class Validate
         if (!isset($payload->currency) || empty($payload->currency)) {
             $err[]='currency may not be empty';
         }
-
+        $state = self::checkAccount($payload->accountNo);
+        if ($state != '')
+            $err[]=$state;
+        
+       
         $data = '';
         foreach($err as $e){
-            $data .= $data .' ';
+            $data .= $e .' ';
         }
+        return $data;//die(print_r($data));
     }
     public static function cashin($payload)    {
         $err = array();
@@ -566,6 +616,11 @@ class Validate
         if (!isset($payload->amount) || empty($payload->amount)) {
             $err[]='amount may not be empty';
         }
+
+        $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+        if ($state != '')
+           return $state;
         
 
         $data = '';
