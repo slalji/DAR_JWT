@@ -114,24 +114,24 @@ class Transactions
     public function _addAccountProfile($data){
         //unset($data['transid']);
         $profile = array();
-        $profile['firstName']=isset($data['firstName'])?$data['firstName']:'';
-        $profile['lastName']=isset($data['lastName'])?$data['lastName']:'';
+        $profile['firstName']=isset($data['firstName'])?ucfirst($data['firstName']):'';
+        $profile['lastName']=isset($data['lastName'])?ucfirst($data['lastName']):'';
         $profile['gender']=isset($data['gender'])?$data['gender']:'';
         $profile['customerNo']=isset($data['customerNo'])?$data['customerNo']:'';
         $profile['accountNo']=isset($data['accountNo'])?$data['accountNo']:'';
         $profile['msisdn']=isset($data['msisdn'])?$data['msisdn']:'';
         $profile['email']=isset($data['email'])?$data['email']:'';
         //$profile['status']=isset($data['status'])?$data['status']:0;
-        $profile['addressLine1']=isset($data['addressLine1'])?$data['addressLine1']:'';
-        $profile['addressCity']=isset($data['addressCity'])?$data['addressCity']:'';
-        $profile['addressCountry']=isset($data['email'])?$data['email']:'';
+        $profile['addressLine1']=isset($data['addressLine1'])?ucfirst($data['addressLine1']):'';
+        $profile['addressCity']=isset($data['addressCity'])?ucfirst($data['addressCity']):'';
+        $profile['addressCountry']=isset($data['email'])?strtolower($data['email']):'';
         $profile['dob']=isset($data['dob'])?$data['dob']:null;
-        $profile['currency']=isset($data['currency'])?$data['currency']:'TZS';
+        $profile['currency']=isset($data['currency'])?strtoupper($data['currency']):'TZS';
         $profile['status']=1;
         //$profile['active']=isset($data['active'])?$data['active']:0; //acive=0 closed=1
-        $profile['nationality']=isset($data['nationality'])?$data['nationality']:'';
+        $profile['nationality']=isset($data['nationality'])?ucfirst($data['nationality']):'';
         $profile['balance']=0;
-        $profile['tier']=isset($data['tier'])?$data['tier']:'A';
+        $profile['tier']=isset($data['tier'])?strtoupper($data['tier']):'A';
 
         $cols = null;
         $vals = null;
@@ -177,7 +177,7 @@ class Transactions
     }
     public function get_msisdn($accountNo){
 
-        $sql ="select msisdn from accountProfile where accountNo ='$accountNo' ";
+        $sql ="select msisdn from accountprofile where accountNo ='$accountNo' ";
     
         $stmt = $this->conn->prepare( $sql );
         $stmt->execute();
@@ -206,10 +206,10 @@ class Transactions
 
         $stmt = $this->conn->prepare( $sql );
         $stmt->execute();
-        $result = $stmt->fetchAll( PDO::FETCH_ASSOC );
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
        
         if (!empty($result))
-            return ($result[0]);
+            return ($result);
         else
             return false;
 
@@ -219,7 +219,7 @@ class Transactions
         $message['status']= 'SUCCESS';
         $message['method']=$method;
         $result['resultcode'] =200;
-        $result['result']=$res[0];
+        $result['result']=$res;
         $message['data']=$result;
 
         return $respArray = ['transid'=>$transid,'reference'=>$ref,'responseCode' =>  200, "Message"=>($message)];
@@ -498,7 +498,7 @@ public function  _checkTcard($accountNo){
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
             $payload['method'] = 'updateAccount';
-            $res[0]=$payload;
+            $res=$payload;
           
             $respArray = $this->_getResponse('updateAccount',$res, $payload['transid'], $this->reference);
 
@@ -509,7 +509,7 @@ public function  _checkTcard($accountNo){
             $message['status']="ERROR";
             $message['method']='updateAccount';//.$e->getMessage()." : ";
             $result['resultcode'] ='501';
-            $result['result']='Check JSON payload syntax for invalid parameters '.$e->getMessage();
+            $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
@@ -577,8 +577,8 @@ public function  _checkTcard($accountNo){
             $sql = "select bankname, bankbranch, bankaccountname, bankaccountnumber from  accountprofile WHERE accountNo=$customer";
             $stmt = $this->conn->prepare( $sql );
             $stmt->execute();
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $row = $result[0];
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = $result;
 
 
             //verify the information is the same as in DB
@@ -629,7 +629,7 @@ public function  _checkTcard($accountNo){
         $sql=null;
         try{
             $err = Validate::nameLookup($data);
-            (print_r('out'));
+           
             if (!empty($err))
                 throw new Exception($err);
                 
@@ -647,7 +647,7 @@ public function  _checkTcard($accountNo){
             $sql ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'false\'),1,\'true\') AS statustxt, REPLACE(REPLACE(active,0,\'true\'),1,\'false\') AS activetxt, email, addressLine1,addressCity, addressCountry,dob as dateofbirth,state, gender, nationality, currency, balance, lastupdated from accountprofile '.$where;
 
             $stmt = $this->conn->query( $sql );
-            $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
             
             $respArray = $this->_getResponse('nameLookup',$res, $payload['transid'], $this->reference);
         }
@@ -670,21 +670,18 @@ public function  _checkTcard($accountNo){
             $err = Validate::transactionLookup($data);
             if (!empty($err))
                 throw new Exception($err);
-            $payload = (array)$data;
-            if (isset($payload['accountNo'])){
-                $account = $payload['accountNo'];
-                $msisdn = $this->get_msisdn($account);
-            }                
-            else 
-                $msisdn = $payload['msisdn'];
+
+            $payload = (array)$data;            
+            $account = $payload['accountNo'];
+            $msisdn = $this->get_msisdn($account);  
 
                     /*transref is the needle transid and msisdn should belong*/
-            $sql ="select fulltimestamp,t.transid,t.reference,msisdn,amount, message,name,utilitycode,utilityref, transtype, geocode,generateVoucher,redeemVoucher from transaction as t INNER JOIN tinfo ON tinfo.transid=t.transid where t.transid = '".$data->transref."' && msisdn='$msisdn'";
-
+            $sql ="select fulltimestamp,t.transid,t.reference,msisdn,amount, message,name,utilitycode,utilityref, transtype, geocode,posId, tinfo.comments from transaction as t INNER JOIN tinfo ON tinfo.transid=t.transid where t.transid = '".$data->transref."' && msisdn='$msisdn'";
+           
             $stmt = $this->conn->query( $sql );
             
-            $res[0] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+             
            
             $respArray = $this->_getResponse('transactionLookup',$res, $payload['transid'], $this->reference);
         }
@@ -710,7 +707,7 @@ public function  _checkTcard($accountNo){
                
             $payload = (array)$data;
 
-            $msisdn = isset($payload['msisdn'])?$payload['msisdn']:DB::get_msisdn($payload['accountNo']);
+            $msisdn = isset($payload['msisdn'])?$payload['msisdn']:self::get_msisdn($payload['accountNo']);
             //check sender card status active state
             $active = Validate::_checkCard($msisdn);
             if ($active != 'active'){
@@ -765,7 +762,7 @@ public function  _checkTcard($accountNo){
         try{
            
             //check for required fields eg transid return accountprofile info of this transid
-            $err = Validate::enquiry($data);
+            $err = Validate::checkBalance($data);
             if (!empty($err))
                 throw new Exception($err);
             $payload = (array)$data;
@@ -787,7 +784,7 @@ public function  _checkTcard($accountNo){
                 foreach ($res as $key => $val){
                     $payload[$key]=$val;
                 }
-                $result[0]=$payload;           
+                $result=$payload;           
                 
                 $respArray = $this->_getResponse('checkBalance',$result, $payload['transid'], $this->reference);
         }
@@ -799,28 +796,28 @@ public function  _checkTcard($accountNo){
             $result['resultcode'] ='501';
             $result['result']=$e->getMessage();
             $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,$payload['reference'],'responseCode' => 501, "Message"=>($message)];
+            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
         return (json_encode($respArray));
     }
     public function getStatement($data)   {
         try{
             //check for required fields eg transid return accountprofile info of this transid
-            $err = Validate::enquiry($data);
+            $err = Validate::getStatement($data);
             if (!empty($err))
                 throw new Exception($err);
             $payload = (array)$data;
 
             $payload['reference']=$this->reference;
-            $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
+            $account = $payload['accountNo'];
+            $msisdn = $this->get_msisdn($account);
             $days = isset($payload['days'])?$payload['days']:3;
-            unset($payload['transid']);
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
-            $payload['transid'] = $data->transid;
-            $payload['message'] = 'getStatement';
+            $payload['method'] = 'getStatement';
            
             $selcom = new DbHandler();
-            $res[0] = $selcom->statementEnquiry($account,$days);           
+            $res = $selcom->statementEnquiry($msisdn,$days); 
+                   
            
             $respArray = $this->_getResponse('getStatement',$res, $payload['transid'], $this->reference);
 
@@ -867,7 +864,7 @@ public function  _checkTcard($accountNo){
             $sql3 ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'close\'),1,\'open\') AS statustxt,  lastupdated from accountprofile  where accountNo="'.$accountNo.'"';
             $stmt3 = $this->conn->query($sql3);
 
-            $res[0] = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+            $res = $stmt3->fetch(PDO::FETCH_ASSOC);
             $respArray = $this->_getResponse('changeStatus',$res, $payload['transid'], $this->reference);
 
 
@@ -1056,7 +1053,8 @@ public function  _checkTcard($accountNo){
         return (json_encode($respArray));
     }
     public function requestCard($data){
-        $sql =null;
+       
+        $sql =null;  
         $sql2=null;
         try{
             $err = Validate::requestCard($data);
@@ -1123,7 +1121,7 @@ public function  _checkTcard($accountNo){
                 $id = $this->conn->lastInsertId();
                 $sql2 = "select name, msisdn, card, cvv, exp, accountNo from tcard where id=".$id;
                 $stmt2 =  $this->conn->query( $sql2 );
-                $row[0] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+                $row = $stmt2->fetch(PDO::FETCH_ASSOC);
                 $respArray = $this->_getResponse('requestCard',$row, $payload['transid'], $this->reference);
             }
             else{

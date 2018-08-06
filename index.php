@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
                 $message['status']="ERROR";
                 $message['method']='';//.$e->getMessage()." : ";//.$sql;
                 $result['resultcode'] ='402';
-                $result['result']='Missing Parameters';
+                $result['result']=$err;
                 $message['data']=$result;
                 $respArray = ['transid'=>'','reference'=>'','responseCode' => 501, "Message"=>($message)];
                 $response = json_encode($body);
