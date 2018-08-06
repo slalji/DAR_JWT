@@ -141,8 +141,8 @@ class DB extends PDO {
             case 'fundTransfer': $response = ( $transaction->transferFunds($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
             case 'nameLookup':$response = ($transaction->NameLookup($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
             case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            //case 'reserveAccount': $response = ( $transaction->reserveAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log"); break;
-            //case 'unReserveAccount': $response = ( $transaction->unReserveAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log"); break;
+            case 'attachAccount': $response = ( $transaction->linkAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log"); break;
+            case 'unAttachAccount': $response = ( $transaction->unLinkAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log"); break;
             case 'changeStatus': $response = ( $transaction->updateAccountStatus($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
             case 'requestCard': $response = ( $transaction->requestCard($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
             case 'search': $response = ( $transaction->search($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($data), 3, "transsnet.log"); break;

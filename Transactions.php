@@ -73,7 +73,7 @@ class Transactions
             $respArray = ['transid'=>$data['transid'],$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
     }
-    public function _linkAccountProfile($data){
+    /*public function _linkAccountProfile($data){
 
         $payload = (array)$data;
         $arr = null;
@@ -110,7 +110,7 @@ class Transactions
             $message['data']=$result;
             $respArray = ['transid'=>$data['transid'],$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
-    }
+    }*/
     public function _addAccountProfile($data){
         //unset($data['transid']);
         $profile = array();
@@ -452,7 +452,7 @@ public function  _checkTcard($accountNo){
 
             $this->_addAccountProfile($payload);
             $payload['accountNo'] = $this->_getAccountNo($payload['customerNo']);
-            $res[0]=$payload;
+            $res=$payload;
         
             $respArray = $this->_getResponse('openAccount',$res, $payload['transid'], $this->reference);
         }
@@ -524,30 +524,46 @@ public function  _checkTcard($accountNo){
                 throw new Exception($err);
 
             $payload = (array)$data;
-            $bname = $payload['bankname'];
-            $bbranch = $payload['bankbranch'];
-            $baccountname = $payload['bankaccountname'];
-            $baccountno = $payload['bankaccountnumber'];
+           
+            $accountNo = $payload['accountNo'];
+            unset($payload['transid']);
+            $cols = null;
+            $vals = null;
+        
 
-            $customer = $this->_getAccountNo($payload['customerNo']);
+            foreach($payload as $key => $val){
 
+                    $cols.=$key.', ';
+                    $vals.=':'.$key.', ';
+            }
 
-            $query = "UPDATE accountprofile SET bankname='".$bname."', bankbranch='".$bbranch."', bankaccountname='".$baccountname."', bankaccountnumber='".$baccountno."' WHERE accountNo=$customer";
-            $this->conn->query($query);
+            $cols = rtrim($cols,', ');
+            $vals = rtrim($vals,', ');
 
+            
+            $sql ="INSERT INTO vendor (".$cols.") VALUES (".$vals.")";            
+
+            $stmt = $this->conn->prepare( $sql );
+            $state = $this->_pdoBindArray($stmt,$payload);
+            
+            $state->execute();
+       
+            //die(print_r($this->conn->lastInsertId()));
 
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
             $payload['method'] = 'linkAccount';
-            
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="linkAccount";
-            $result['resultcode'] =200;
-            $result['result']=$payload;
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
+            $result['resultcode'] ='101';
 
+            $sql2 ='SELECT vendorName, vendorBranch, vendorAccountName, vendorAccountNumber,msisdn, accountNo,  REPLACE(REPLACE(status,0,\'false\'),1,\'true\') AS statustxt, REPLACE(REPLACE(active,0,\'true\'),1,\'false\') AS activetxt from vendor where accountNo="$accountNo"';
+            $stmt2 = $this->conn->query($sql2);
+            //die(print_r($stmt2));
+            //$stmt2->execute();
+            $res = $stmt2->fetch(PDO::FETCH_ASSOC);
+            $result['result']=$res;
+            
+            
+            $respArray = $this->_getResponse('linkAccount',$res, $data->transid, $this->reference);
             }catch (Exception $e) {
 
                 $message = array();
@@ -556,7 +572,7 @@ public function  _checkTcard($accountNo){
                 $result['resultcode'] ='501';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
-                $respArray = ['transid'=>$data->transid,'reference'=>$response['reference'],'responseCode' => 501, "Message"=>($message)];
+                $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
             }
         return (json_encode($respArray));
     }
@@ -567,60 +583,36 @@ public function  _checkTcard($accountNo){
                 throw new Exception($err);
 
             $payload = (array)$data;
-            $bname = $payload['bankname'];
-            $bbranch = $payload['bankbranch'];
-            $baccountname = $payload['bankaccountname'];
-            $baccountno = $payload['bankaccountnumber'];
+             
 
-            $customer = $this->_getAccountNo($payload['customerNo']);
+            $accountNo = $payload['accountNo'];
+            $statustxt = $payload['statustxt'];
+            if ($statustxt =='open')
+                $sql = "UPDATE vendor SET status='1', active='1'  WHERE accountNo='$accountNo'";
+            else
+                $sql = "UPDATE vendor SET status='D', active='0'  WHERE accountNo='$accountNo'";
+            $this->conn->query($sql);
 
-            $sql = "select bankname, bankbranch, bankaccountname, bankaccountnumber from  accountprofile WHERE accountNo=$customer";
-            $stmt = $this->conn->prepare( $sql );
-            $stmt->execute();
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            $row = $result;
-
-
-            //verify the information is the same as in DB
-            $bname = $row['bankname'] === $payload['bankname']?'':'999';
-            $bbranch = $row['bankbranch'] === $payload['bankbranch']?'':'999';
-            $baccountname = $row['bankaccountname'] === $payload['bankaccountname']?'':'999';
-            $baccountno = $row['bankaccountnumber'] === $payload['bankaccountnumber']?'':'999';
-            //
-            if (empty($bname) && empty($bbranch) && empty($baccountname) && empty($baccountno)){
-                $query = "UPDATE accountprofile SET bankname='".$bname."', bankbranch='".$bbranch."', bankaccountname='".$baccountname."', bankaccountnumber='".$baccountno."' WHERE id=$customer";
-                $this->conn->query($query);
-
-            }
-            else{
-                $err ="account information could not be verified, please check your details ";
-                throw new Exception($err);
-            }
-
-
+            
 
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
             $payload['method'] = 'linkAccount';
+            $result=['resultcode'=>'102'];
+            $result=['result'=>'removed from account'];
+            $res=$result;
             
-            $message = array();
-            $message['status']="SUCCESS";
-            $message['method']="linkAccount";
-            $payload="successfully unlinked Account from TPAY";
-            $result['resultcode'] =200;
-            $result['result']=$payload;
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,'reference'=>$payload['reference'],'responseCode' => 200, "Message"=>($message)];
-
+            $respArray = $this->_getResponse('unLinkAccount',$res, $payload['transid'], $this->reference);
+            
         }catch (Exception $e) {
 
             $message = array();
             $message['status']="ERROR";
             $message['method']='unLinkAccount';//.$e->getMessage()." : ";
             $result['resultcode'] ='501';
-                $result['result']=$e->getMessage();
-                $message['data']=$result;
-                $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
+            $result['result']=$e->getMessage();
+            $message['data']=$result;
+            $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
         }
         return (json_encode($respArray));
     }

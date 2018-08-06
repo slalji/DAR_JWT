@@ -291,7 +291,7 @@ class Validate
     }
     public static function _checkTransid($transid){
 
-        $data = isset($err) ? $err :false;
+        
            $conn = DB::getInstance();
             $sql ="select id, transid  from transaction where transid='".$transid."'";
             $stmt = $conn->prepare( $sql );
@@ -299,6 +299,14 @@ class Validate
             $result = $stmt->fetchAll();
             return $stmt->rowCount();
 
+    }
+    public static function _checkVendor($vendorName,$vendorBranch,$vendorAccountNumber, $accountNo ){
+        $conn = DB::getInstance();
+        $sql ="select id from vendor where vendorName='".$vendorName."' && vendorBranch='".$vendorBranch."'  && vendorAccountNumber='".$vendorAccountNumber."' && accountNo='".$accountNo."'";
+        $stmt = $conn->prepare( $sql );
+        $stmt->execute();
+        $result = $stmt->fetchAll();        
+        return $stmt->rowCount();
     }
     public static function openAccount($payload){
 
@@ -309,13 +317,13 @@ class Validate
                 return 'missing parameter transid';
             }
             if (!isset($payload->customerNo) || empty($payload->customerNo)) {
-                return 'customerNo may not be empty';
+                return 'missing parameter customerNo ';
             }
             if (!isset($payload->firstName) || empty($payload->firstName )) {
-                return 'firstName may not be empty';
+                return 'missing parameter firstName ';
             }
             if (!isset($payload->lastName) || empty($payload->lastName )) {
-                return 'lastName may not be empty';
+                return 'missing parameter lastName ';
             }
             if (!isset($payload->msisdn) || empty($payload->msisdn)) {
                 return 'missing parameter msisdn';
@@ -391,10 +399,10 @@ class Validate
         $err = array();
 
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {          
-            return 'accountNo  may not be empty';
+            return 'missing parameter accountNo  ';
         }
         if (!isset($payload->msisdn) || empty($payload->msisdn)) {          
-            return 'msisdn  may not be empty';
+            return 'missing parameter msisdn  ';
         }
         if (!isset($payload->transid) || empty($payload->transid)) { 
             return 'missing parameter transid';
@@ -421,13 +429,13 @@ class Validate
             return 'missing parameter transid';
         }
         if (!isset($payload->utilityref) || empty($payload->utilityref)) {
-            return 'utilityref may not be empty';
+            return 'utilityref ';
         }
         if (!isset($payload->amount) || empty($payload->amount)) {
             return 'missing parameter amount';
         }
         if (!isset($payload->currency) || empty($payload->currency)) {
-            return 'currency may not be empty';
+            return 'missing parameter currency ';
         }
 
        return  $state = self::checkAccount($payload->accountNo); 
@@ -464,7 +472,7 @@ class Validate
             return 'missing parameter accountNo';
         }
         if (!isset($payload->statustxt) || empty($payload->statustxt)) {
-           return 'status may not be empty';
+           return 'status ';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
@@ -554,16 +562,16 @@ class Validate
             return 'missing parameter transid';
         }
         if (!isset($payload->utilitycode) || empty($payload->utilitycode)) {
-            return 'utilitycode may not be empty';
+            return 'missing parameter utilitycode ';
         }
         if (!isset($payload->utilityref) || empty($payload->utilityref)) {
-            return 'utilityref may not be empty';
+            return 'missing parameter utilityref ';
         }
         if (!isset($payload->amount) || empty($payload->amount)) {
             return 'missing parameter amount';
         }
         if (!isset($payload->currency) || empty($payload->currency)) {
-            return 'currency may not be empty';
+            return 'missing parameter currency ';
         }
        return  $state = self::checkAccount($payload->accountNo);
        
@@ -573,7 +581,7 @@ class Validate
     public static function cashin($payload)    {
         $err = array();
         if (!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return  'missing parameter msisdn';
+            return 'missing parameter msisdn';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
@@ -592,23 +600,31 @@ class Validate
     public static function linkAccount($payload)    {
         $err = array();
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
-            return  'missing parameter accountNo';
+            return 'missing parameter accountNo';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
         }
-
-        if (!isset($payload->bankname) || empty($payload->bankname)) {
-            return 'bank name may not be empty';
+        if (!isset($payload->vendorType) || empty($payload->vendorType)) {
+            return 'missing parameter institution type ';
         }
-        if (!isset($payload->bankbranch) || empty($payload->bankbranch)) {
-            return 'bank branch name may not be empty';
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorName) || empty($payload->vendorName))) {
+            return 'missing parameter institution name ';
         }
-        if (!isset($payload->bankaccountname) || empty($payload->bankaccountname)) {
-            return 'bank account name may not be empty';
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorBranch) || empty($payload->vendorBranch))) {
+            return 'institution branch name ';
         }
-        if (!isset($payload->bankaccountnumber) || empty($payload->bankaccountnumber)) {
-            return 'bank account number may not be empty';
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorAccountName) || empty($payload->vendorAccountName))) {
+            return 'institution account name ';
+        }
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorAccountNumber) || empty($payload->vendorAccountNumber))) {
+            return 'institution account number ';
+        }
+        if ($payload->vendorType==strtolower('bank')) {
+            $check = self::_checkVendor($payload->vendorName,$payload->vendorBranch,$payload->vendorAccountNumber, $payload->accountNo );
+            if($check >=1 ){
+                return "Account already linked";
+            }
         }
 
     }
