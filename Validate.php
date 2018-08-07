@@ -318,7 +318,7 @@ class Validate
     }
     public static function openAccount($payload){
 
-        $err = array();
+       
         try{
 
            if (!isset($payload->transid) || empty($payload->transid)) {
@@ -353,7 +353,7 @@ class Validate
        
     }
     public static function updateAccount($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
         }
@@ -368,7 +368,7 @@ class Validate
 
     }
     public static function nameLookup($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo))  {
             return 'missing parameter accountNo nameLookup';
         }
@@ -384,7 +384,7 @@ class Validate
        
     }
     public static function requestCard($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)){            
             return 'missing parameter accountNo ';
         }
@@ -404,7 +404,7 @@ class Validate
        
     }
     public static function transactionLookup($payload){
-        $err = array();
+       
 
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {          
             return 'missing parameter accountNo  ';
@@ -429,7 +429,7 @@ class Validate
       
     }
     public static function transferFunds($payload)    {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
         }
@@ -453,7 +453,7 @@ class Validate
 
     }
     public static function getStatement($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)){
             return 'missing parameter accountNo ';
         }
@@ -464,7 +464,7 @@ class Validate
        
     }
     public static function checkBalance($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)){
             return 'missing parameter accountNo ';
         }
@@ -475,7 +475,7 @@ class Validate
        
     }
     public static function accountState($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
         }
@@ -504,7 +504,7 @@ class Validate
        
     }
     public static function reserveAccount($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo))
             if(!isset($payload->msisdn) || empty($payload->msisdn)) {
             return  'accountNo or missing parameter msisdn';
@@ -525,7 +525,7 @@ class Validate
 
     }
     public static function unReserveAccount($payload) {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return  'missing parameter accountNo';
         }
@@ -562,7 +562,7 @@ class Validate
     }
     public static function payUtility($payload)    {
         //die(print_r($payload));
-        $err = array();
+       
         /*if (!isset($payload->msisdn) || empty($payload->msisdn))  {
             return 'missing parameter msisdn';
         }*/
@@ -587,7 +587,7 @@ class Validate
         
     }
     public static function cashin($payload)    {
-        $err = array();
+       
         if (!isset($payload->msisdn) || empty($payload->msisdn)) {
             return 'missing parameter msisdn';
         }
@@ -600,10 +600,7 @@ class Validate
         }
 
        return  $state = self::checkAccount($payload->accountNo); 
-        //die($state);      
-       
-          
-        
+        //die($state);
     }
     public static function linkAccount($payload)    {
        
@@ -701,6 +698,26 @@ class Validate
         
         
 
+    }
+    public static function unLinkAccount($payload){
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+            return 'missing parameter accountNo';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            return 'missing parameter transid';
+        }
+
+        if (!isset($payload->vendorType) || empty($payload->vendorType)) {
+            return 'missing parameter vendorType';
+        }
+
+        if (!isset($payload->bankAccountNumber) || empty($payload->bankAccountNumber)) {
+            if (!isset($payload->cardNumber) || empty($payload->cardNumber)) {
+                return 'missing parameter either bankAccountNumber or cardNumber';
+            }
+        }
+
+        
     }
 
 

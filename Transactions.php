@@ -225,6 +225,17 @@ class Transactions
         return $respArray = ['transid'=>$transid,'reference'=>$ref,'responseCode' =>  200, "Message"=>($message)];
 
     }
+    public function _getError($method, $e, $code, $transid, $reference){
+       // $this->_getError('requestCard',$e->getMessage(), 076,$payload['transid'], $this->reference);
+         $message = array();
+            $message['status']="ERROR";
+            $message['method']=$method ;
+            $result['resultcode'] = $code;
+            $result['result']=$e;
+            $message['data']=$result;
+            return $respArray = ['transid'=>$transid,'reference'=>$reference,'responseCode' => 501, "Message"=>($message)];
+             
+    }
     public function _addCard($data)   {
 
         /*
@@ -458,13 +469,16 @@ public function  _checkTcard($accountNo){
         }
         catch (Exception $e) {
 
-            $message = array();
+           /* $message = array();
             $message['status']="ERROR";
             $message['method']='openAccount';//.$e->getMessage()." : ";
             $result['resultcode'] ='061';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
+            */
+            $respArray = $this->_getError('openAccount',$e->getMessage(),'061',$data->transid, $this->reference);
+            
         }
 
         return (json_encode($respArray));
@@ -505,13 +519,16 @@ public function  _checkTcard($accountNo){
         }
         catch (Exception $e) {
 
-            $message = array();
+           /* $message = array();
             $message['status']="ERROR";
             $message['method']='updateAccount';//.$e->getMessage()." : ";
             $result['resultcode'] ='062';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
+            */
+            $respArray = $this->_getError('updateAccount',$e->getMessage(), '062',$data->transid, $this->reference);
+           
         }
 
         return (json_encode($respArray));
@@ -558,34 +575,38 @@ public function  _checkTcard($accountNo){
             $respArray = $this->_getResponse('linkAccount',$payload, $data->transid, $this->reference);
             }catch (Exception $e) {
 
-                $message = array();
+               /* $message = array();
                 $message['status']="ERROR";
                 $message['method']='linkAccount';//.$e->getMessage()." : ".$customer;
                 $result['resultcode'] ='063';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
                 $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
+                */
+                $respArray = $this->_getError('linkAccount',$e->getMessage(),'063',$data->transid, $this->reference);
             }
         return (json_encode($respArray));
     }
     public function unLinkAccount($data)   {
+        $sql = '';
         try{
-            $err = Validate::linkAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
+            $err = Validate::unLinkAccount($data); //if 2 MJ then account alread exists status is still 0 change it to one on accountprofile
             if (!empty($err))
                 throw new Exception($err);
 
             $payload = (array)$data;
              
-
             $accountNo = $payload['accountNo'];
+            $vendoraccountNo = $payload['vendorType'] == 'bank'?$payload['bankAccountNumber']:$payload['cardNumber'];
+            $type = $payload['vendorType'] == 'bank'?'bankAccountNumber':'cardNumber';
             $statustxt = $payload['statustxt'];
             if ($statustxt =='open')
-                $sql = "UPDATE vendor SET status='1', active='1'  WHERE accountNo='$accountNo'";
+                $sql = "UPDATE vendor SET status='1', active='1'  WHERE $type='$vendoraccountNo' && accountNo='$accountNo'";
             else
-                $sql = "UPDATE vendor SET status='D', active='0'  WHERE accountNo='$accountNo'";
-            $this->conn->query($sql);
-
-            
+                $sql = "UPDATE vendor SET status='D', active='0'  WHERE $type='$vendoraccountNo' && accountNo='$accountNo'";
+            //die($sql);    
+            $status = $this->conn->query($sql);
+           
 
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
@@ -598,13 +619,15 @@ public function  _checkTcard($accountNo){
             
         }catch (Exception $e) {
 
-            $message = array();
+            /*$message = array();
             $message['status']="ERROR";
             $message['method']='unLinkAccount';//.$e->getMessage()." : ";
             $result['resultcode'] ='064';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
+            */
+            $respArray = $this->_getError('unLinkAccount',$e->getMessage().$sql,'064',$data->transid, $this->reference);
         }
         return (json_encode($respArray));
     }
@@ -637,13 +660,17 @@ public function  _checkTcard($accountNo){
         }
         catch (Exception $e) {
 
-            $message = array();
+           /* $message = array();
             $message['status']="ERROR";
             $message['method']='nameLookup';//.$e->getMessage()." : ";//.$sql;
             $result['resultcode'] ='065';
             $result['result']=$e->getMessage().' : '.$sql;
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
+            */
+            $respArray = $this->_getError('nameLookup',$e->getMessage(),'065',$data->transid, $this->reference);
+
+            
         }
        
         return (json_encode($respArray));
@@ -950,13 +977,11 @@ public function  _checkTcard($accountNo){
 
             $respArray = $this->_getResponse('payUtility',$res, $payload['transid'], $this->reference);
 
-
-
         }catch (Exception $e) {
 
             $message = array();
             $message['status']="ERROR";
-            $result['resultcode'] ='072';
+            $result['resultcode'] ='073';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
                 $result['resultcode'] ='501';
@@ -994,7 +1019,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='reserveAccount';//.$e->getMessage()." : ";
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='074';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -1029,7 +1054,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='unReserveAccount';//.$e." : ";//.$sql;
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='075';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
                 $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
@@ -1117,14 +1142,16 @@ public function  _checkTcard($accountNo){
         }
         catch(Exception $e) {
 
-            $message = array();
+            /*$message = array();
             $message['status']="ERROR";
             $message['method']='requestCard' ;
-            $result['resultcode'] ='501';
-                $result['result']=$e->getMessage().$sql;
-                $message['data']=$result;
-
+            $result['resultcode'] ='076';
+            $result['result']=$e->getMessage().$sql;
+            $message['data']=$result;
             $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
+            */
+            $respArray = $this->_getError('requestCard',$e->getMessage(), 076,$payload['transid'], $this->reference);
+            
         }
         return (json_encode($respArray));
 
