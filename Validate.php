@@ -300,9 +300,17 @@ class Validate
             return $stmt->rowCount();
 
     }
-    public static function _checkVendor($vendorName,$vendorBranch,$vendorAccountNumber, $accountNo ){
+    public static function _checkVendorCard($cardHolderName,$cardType,$cardNumber, $accountNo ){
         $conn = DB::getInstance();
-        $sql ="select id from vendor where vendorName='".$vendorName."' && vendorBranch='".$vendorBranch."'  && vendorAccountNumber='".$vendorAccountNumber."' && accountNo='".$accountNo."'";
+        $sql ="select id from vendor where cardHolderName='".$cardHolderName."' && cardType='".$cardType."'  && cardNumber='".$cardNumber."' && accountNo='".$accountNo."'";
+        $stmt = $conn->prepare( $sql );
+        $stmt->execute();
+        $result = $stmt->fetchAll();        
+        return $stmt->rowCount();
+    }        
+    public static function _checkBank($bankName,$bankBranch,$bankAccountNumber, $accountNo ){
+        $conn = DB::getInstance();
+        $sql ="select id from vendor where bankName='".$bankName."' && bankBranch='".$bankBranch."'  && bankAccountNumber='".$bankAccountNumber."' && accountNo='".$accountNo."'";
         $stmt = $conn->prepare( $sql );
         $stmt->execute();
         $result = $stmt->fetchAll();        
@@ -598,7 +606,7 @@ class Validate
         
     }
     public static function linkAccount($payload)    {
-        $err = array();
+       
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
         }
@@ -606,26 +614,92 @@ class Validate
             return 'missing parameter transid';
         }
         if (!isset($payload->vendorType) || empty($payload->vendorType)) {
-            return 'missing parameter institution type ';
+            return 'missing parameter vendor type ';
         }
-        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorName) || empty($payload->vendorName))) {
-            return 'missing parameter institution name ';
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->bankName) || empty($payload->bankName))) {
+            return 'missing parameter bank name ';
         }
-        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorBranch) || empty($payload->vendorBranch))) {
-            return 'institution branch name ';
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->bankBranch) || empty($payload->bankBranch))) {
+            return 'bank branch name ';
         }
-        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorAccountName) || empty($payload->vendorAccountName))) {
-            return 'institution account name ';
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->bankAccountName) || empty($payload->bankAccountName))) {
+            return 'bank account name ';
         }
-        if ($payload->vendorType==strtolower('bank') && (!isset($payload->vendorAccountNumber) || empty($payload->vendorAccountNumber))) {
-            return 'institution account number ';
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->bankAccountNumber) || empty($payload->bankAccountNumber))) {
+            return 'bank account number ';
         }
-        if ($payload->vendorType==strtolower('bank')) {
-            $check = self::_checkVendor($payload->vendorName,$payload->vendorBranch,$payload->vendorAccountNumber, $payload->accountNo );
+        if ($payload->vendorType==strtolower('bank') && (isset($payload->vendorType) || !empty($payload->vendorType))) {
+            $check = self::_checkBank($payload->bankName,$payload->bankBranch,$payload->bankAccountNumber, $payload->accountNo );
             if($check >=1 ){
-                return "Account already linked";
+                return "Bank account already linked";
             }
         }
+        /*else{
+            return "VendorType is ".$payload->vendorType;
+        }
+        if ($payload->vendorType==strtolower('card') && (!isset($payload->cardType) || empty($payload->cardType))) {
+            return 'missing parameter bank card Type ';
+        }*/
+        if ($payload->vendorType==strtolower('card') && (!isset($payload->cardType) || empty($payload->cardType))) {
+            return 'card type, such as Mastercard, Visa, American Express ';
+        }
+        if ($payload->vendorType==strtolower('card') && (!isset($payload->cardHolderName) || empty($payload->cardHolderName))) {
+            return 'card holder name as shown on the card ';
+        }
+        if ($payload->vendorType==strtolower('card') && (!isset($payload->cardNumber) || empty($payload->cardNumber))) {
+            return 'card number ';
+        }
+        if ($payload->vendorType==strtolower('card') && (isset($payload->cardNumber) || !empty($payload->cardNumber))) {
+            if(!is_numeric($payload->cardNumber) || strlen($payload->cardNumber) != 16)
+            return 'invalid card number format';
+        }
+        if ($payload->vendorType==strtolower('card') && (!isset($payload->exp) || empty($payload->exp))) {
+            return 'expiry date in mm/yy format ';
+        }
+        if ($payload->vendorType==strtolower('card') && (!isset($payload->cvv) || empty($payload->cvv))) {
+            return '3 digits found at the back of the card ';
+        }
+       /* if ($payload->vendorType==strtolower('card') && (!isset($payload->pin) || empty($payload->pin))) {
+            return 'pin number ';
+        }
+        if ($payload->vendorType==strtolower('card') && (!isset($payload->confirmPin) || empty($payload->confirmPin))) {
+            return 'confirm pin number ';
+        }
+        if ($payload->vendorType==strtolower('card') && ($payload->confirmPin !== $payload->confirmPin)){
+            return 'pin numbers do not match ';
+        }*/
+        if ($payload->vendorType==strtolower('card') && (isset($payload->exp) || !empty($payload->exp))) {
+           
+            $expDate = explode('/',$payload->exp);
+            if(!isset($expDate[1]) || $expDate[0]>12 )
+             return 'invalid expiry date format of mm/yy '.$expDate[0];
+            if(isset($expDate[1]) && $expDate[1]>99 )
+             return 'invalid expiry date format of mm/yy '.$expDate[0].'/'.$expDate[1];            
+          }
+         
+
+        if ($payload->vendorType==strtolower('card') && (isset($payload->exp) || !empty($payload->exp))) {
+           $expDate = explode('/',$payload->exp);
+           if('20'.$expDate[1]. str_pad($expDate[0],2,'0') < date('Ym')) {
+            return 'card is expired';  
+         
+         }
+        }
+        if ($payload->vendorType==strtolower('card') && (isset($payload->vendorType) || !empty($payload->vendorType))) {
+            $check = self::_checkVendorCard($payload->cardHolderName,$payload->cardType,$payload->cardNumber, $payload->accountNo );
+            if($check >=1 ){
+                return "".$payload->cardType." already linked";
+            }
+        }
+        if ($payload->vendorType==strtolower('card') && (isset($payload->bankName) || isset($payload->bankBranch) || isset($payload->bankAccountName) ||  isset($payload->bankAccountNumber))){
+            return "invalid parameters found";
+        }
+        if ($payload->vendorType==strtolower('bank') && (isset($payload->cardHolderName) || isset($payload->cardNumber) || isset($payload->exp) ||  isset($payload->pin) ||  isset($payload->confirmPin) ||  isset($payload->cvv))){
+            return "invalid parameters found";
+        }
+        
+        
+        
 
     }
 

@@ -119,7 +119,7 @@ class DB extends PDO {
         } 
         return false;
     }
-    public function get_msisdn($accountNo){
+    /*public function get_msisdn($accountNo){
 
         $sql ="select msisdn from accountProfile where accountNo ='$accountNo' ";
     
@@ -129,26 +129,26 @@ class DB extends PDO {
     
         return $result;
     
-    }
+    }*/
     public function transaction($data, $method){
         $transaction = new Transactions();
         
         switch($method){
-            case 'openAccount':$response = ( $transaction->OpenAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'updateAccount':$response = ($transaction->UpdateAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'addCash': $response = ( $transaction->cashin($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'payUtility': $response = ( $transaction->payutility($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'fundTransfer': $response = ( $transaction->transferFunds($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'nameLookup':$response = ($transaction->NameLookup($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'attachAccount': $response = ( $transaction->linkAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log"); break;
-            case 'unAttachAccount': $response = ( $transaction->unLinkAccount($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log"); break;
-            case 'changeStatus': $response = ( $transaction->updateAccountStatus($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'requestCard': $response = ( $transaction->requestCard($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'search': $response = ( $transaction->search($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($data), 3, "transsnet.log"); break;
-            //case 'payutility': $response = ( $transaction->ExGratiaPayments($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log"); break;
-            case 'checkBalance': $response = ( $transaction->checkBalance($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
-            case 'getStatement': $response = ( $transaction->getStatement($data)); print_r($response); error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log"); break;
+            case 'openAccount':$response = ( $transaction->OpenAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'updateAccount':$response = ($transaction->UpdateAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'addCash': $response = ( $transaction->cashin($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'payUtility': $response = ( $transaction->payutility($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'fundTransfer': $response = ( $transaction->transferFunds($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'nameLookup':$response = ($transaction->NameLookup($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'linkAccount': $response = ( $transaction->linkAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
+            case 'unLinkAccount': $response = ( $transaction->unLinkAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
+            case 'changeStatus': $response = ( $transaction->updateAccountStatus($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'requestCard': $response = ( $transaction->requestCard($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'search': $response = ( $transaction->search($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($data), 3, "transsnet.log");*/ break;
+            //case 'payutility': $response = ( $transaction->ExGratiaPayments($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
+            case 'checkBalance': $response = ( $transaction->checkBalance($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'getStatement': $response = ( $transaction->getStatement($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             default: $response = ["transid"=>"","reference"=>"","responseCode"=>"401","Message"=>["status"=>"ERROR","method"=>$method,"data"=>"invalid command method found: ".$method]];error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($response), 3, "transsnet.log"); return json_encode($response);
              
             

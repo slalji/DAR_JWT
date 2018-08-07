@@ -461,7 +461,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='openAccount';//.$e->getMessage()." : ";
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='061';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -508,7 +508,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='updateAccount';//.$e->getMessage()." : ";
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='062';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -527,6 +527,8 @@ public function  _checkTcard($accountNo){
            
             $accountNo = $payload['accountNo'];
             unset($payload['transid']);
+            unset($payload['confirmPin']);
+           
             $cols = null;
             $vals = null;
         
@@ -552,24 +554,14 @@ public function  _checkTcard($accountNo){
 
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
-            $payload['method'] = 'linkAccount';
-            $result['resultcode'] ='101';
-
-            $sql2 ='SELECT vendorName, vendorBranch, vendorAccountName, vendorAccountNumber,msisdn, accountNo,  REPLACE(REPLACE(status,0,\'false\'),1,\'true\') AS statustxt, REPLACE(REPLACE(active,0,\'true\'),1,\'false\') AS activetxt from vendor where accountNo="$accountNo"';
-            $stmt2 = $this->conn->query($sql2);
-            //die(print_r($stmt2));
-            //$stmt2->execute();
-            $res = $stmt2->fetch(PDO::FETCH_ASSOC);
-            $result['result']=$res;
-            
-            
-            $respArray = $this->_getResponse('linkAccount',$res, $data->transid, $this->reference);
+                        
+            $respArray = $this->_getResponse('linkAccount',$payload, $data->transid, $this->reference);
             }catch (Exception $e) {
 
                 $message = array();
                 $message['status']="ERROR";
                 $message['method']='linkAccount';//.$e->getMessage()." : ".$customer;
-                $result['resultcode'] ='501';
+                $result['resultcode'] ='063';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
                 $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -609,7 +601,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='unLinkAccount';//.$e->getMessage()." : ";
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='064';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -648,7 +640,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='nameLookup';//.$e->getMessage()." : ";//.$sql;
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='065';
             $result['result']=$e->getMessage().' : '.$sql;
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -682,7 +674,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='transactionLookup';//.$e->getMessage()." : ";
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='066';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -723,7 +715,7 @@ public function  _checkTcard($accountNo){
 
             //save extra info into tinfo table
             if(!Validate::setTinfo($payload)){
-                $err="Internal Error 500";
+                $err="Internal Error 070";
                 throw new Exception($err);
             }
 
@@ -732,9 +724,9 @@ public function  _checkTcard($accountNo){
 
             $selcom = new DbHandler();
             $res= $selcom->fundTransfer($payload['transid'],$payload['reference'],$payload['utilityref'], $msisdn,$payload['amount']);
-            $result[0]=$res;
+            //$result=$res;
            //die(print_r($res));
-            $respArray = $this->_getResponse('transferFunds',$result, $payload['transid'], $this->reference);
+            $respArray = $this->_getResponse('transferFunds',$res, $payload['transid'], $this->reference);
         }
         catch (Exception $e) {
 
@@ -742,7 +734,7 @@ public function  _checkTcard($accountNo){
             $message['status']="ERROR";
             $message['method']='transferFunds';
             $result['result']=$e->getMessage();
-            $result['resultcode'] = '501';
+            $result['resultcode'] = '067';
             $message['data']=$result;
 
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -785,7 +777,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='checkBalance';//.$e->getMessage()." : ".$sql;
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='068';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -819,7 +811,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='getStatement';//.$e->getMessage()." : ";
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='069';
             $result['result']=$e->getMessage();
             $message['data']=$result;
             $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -865,7 +857,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='updateAccountStatus';//.$e->getMessage()." : ".$sql;
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='071';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
                 $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -909,7 +901,7 @@ public function  _checkTcard($accountNo){
             $message = array();
             $message['status']="ERROR";
             $message['method']='cashin';//.$e->getMessage();
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='072';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
                 $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
@@ -964,7 +956,7 @@ public function  _checkTcard($accountNo){
 
             $message = array();
             $message['status']="ERROR";
-            $result['resultcode'] ='501';
+            $result['resultcode'] ='072';
                 $result['result']=$e->getMessage();
                 $message['data']=$result;
                 $result['resultcode'] ='501';
@@ -1141,6 +1133,7 @@ public function  _checkTcard($accountNo){
        
 
         $searchthis = $data->search;
+        
         $matches = array();
 
         $handle = @fopen("transsetlog.log", "r");
@@ -1150,12 +1143,15 @@ public function  _checkTcard($accountNo){
             {
                 $buffer = fgets($handle);
                 if(strpos($buffer, $searchthis) !== FALSE)
-                    $matches[$i++] = $buffer;
+                print_r($buffer);
+                    $matches[$i++] = ($buffer);
+                    
             }
             fclose($handle);
         }
 
         //show results:
+        
         return ($matches);
 
     }
