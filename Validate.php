@@ -474,7 +474,7 @@ class Validate
        
        
     }
-    public static function accountState($payload) {
+    public static function changeStatus($payload) {
        
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
@@ -586,7 +586,7 @@ class Validate
            
         
     }
-    public static function cashin($payload)    {
+    public static function addCash($payload)    {
        
         if (!isset($payload->msisdn) || empty($payload->msisdn)) {
             return 'missing parameter msisdn';
@@ -685,7 +685,7 @@ class Validate
         if ($payload->vendorType==strtolower('card') && (isset($payload->vendorType) || !empty($payload->vendorType))) {
             $check = self::_checkVendorCard($payload->cardHolderName,$payload->cardType,$payload->cardNumber, $payload->accountNo );
             if($check >=1 ){
-                return "".$payload->cardType." already linked";
+                return $payload->cardType." already linked";
             }
         }
         if ($payload->vendorType==strtolower('card') && (isset($payload->bankName) || isset($payload->bankBranch) || isset($payload->bankAccountName) ||  isset($payload->bankAccountNumber))){
@@ -700,8 +700,11 @@ class Validate
 
     }
     public static function unLinkAccount($payload){
-        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+        /*if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
+        }*/
+        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return 'missing parameter msisdn';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
@@ -716,8 +719,24 @@ class Validate
                 return 'missing parameter either bankAccountNumber or cardNumber';
             }
         }
+        
 
         
+    }
+    public static function cashout($payload) {
+       
+        if (!isset($payload->message) || empty($payload->message)) {
+            return 'missing parameter message';
+        }
+        if (!isset($payload->transid) || empty($payload->transid)) {
+            return 'missing parameter transid';
+        }
+        if (!isset($payload->amount) || empty($payload->amount)) {
+            return 'missing parameter amount';
+        }
+
+          
+
     }
 
 

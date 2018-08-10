@@ -1,5 +1,19 @@
 <?php
+ini_set('SMTP','myserver');
+ini_set('smtp_port',25);
+$to = 'salma@selcom.net';
+$headers  = "MIME-Version: 1.0" . "\r\n";
+$headers .= "Content-type: text/html; charset=iso-8859-1" . "\r\n";
+$headers  .= "From: NO-REPLY<no-reply@mydomain.com>" . "\r\n";
+$subject = "Confirmation For Request";
+$message = '<html>
+                <body>
+                    <p>Hello World</p> 
+                </body>
+            </html>';
+mail( $to, $subject, $message, $headers );
 
+die();
 require_once ("jwt_encode.php");
 require_once ("DB.php");
 

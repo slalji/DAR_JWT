@@ -34,13 +34,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
         //Verify Signature against client Public Key
         if ( Validate::verify($headers)) {
                  
-                $result = $db->incoming($body);
+                $res = $db->incoming($body);
                
-                if($result == false){
+                if($res !== true){
                         error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' incomingDB error:'.json_encode($body), 3, "transsnet.log");
                         $result['resultcode'] =501;
                         $result['result']='Invalid Format';
-                        $message['data']=$result;
+                        $message['data']=$res;
                         $respArray = ['transid'=>'','reference'=>'','responseCode' => 501, "Message"=>($message)];
                         //die (print_r( json_encode($respArray)));
                         return  print_r( json_encode($respArray));
@@ -52,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
                 print_r($response);
                 error_log("\r\n".date('Y-m-d H:i:s').' response: '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");
                 return ($response);
-
         }
         else{
                 $message = array();

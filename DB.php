@@ -60,15 +60,21 @@ class DB extends PDO {
     }
 
     public static function toDateTime($dt){
-        if( $dt == date('Y-m-d H:i:s',strtotime($dt)) ){
-            // date is in fact in one of the above formats
-            return $dt;
+        try{
+            if( $dt == date('Y-m-d H:i:s',strtotime($dt)) ){
+                // date is in fact in one of the above formats
+                
+                return $dt;
+            }
+            else
+            { 
+                return gmdate('Y-m-d H:i:s',$dt);
+            }
         }
-        else
-        {
-            // date is something else.
-           return date('Y-m-d H:i:s');
+        catch(Exception $e){
+            return date('Y-m-d H:i:s');
         }
+       
     }
     public static function toDate($dt){
         if( $dt == date('Y-m-d',strtotime($dt)) ){
@@ -109,10 +115,10 @@ class DB extends PDO {
             $stmt->execute();
             return true; 
         }
-        catch(PDOExecption $e) { 
-            return false;
+        catch(PDOException $e) { 
+             
             //$stmt->rollback(); 
-            //print "Error!: " . $e->getMessage() . $sql."</br>".$data;            
+            return ( "Error!: " . $e->getMessage());          
         } 
         catch(Execption $e ) { 
             //print "Error!: " . $e->getMessage() . $sql. "</br>".$data; 
@@ -136,20 +142,30 @@ class DB extends PDO {
         switch($method){
             case 'openAccount':$response = ( $transaction->OpenAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'updateAccount':$response = ($transaction->UpdateAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'addCash': $response = ( $transaction->cashin($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'addCash': $response = ( $transaction->addCash($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'payUtility': $response = ( $transaction->payutility($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'fundTransfer': $response = ( $transaction->transferFunds($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'nameLookup':$response = ($transaction->NameLookup($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'linkAccount': $response = ( $transaction->linkAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
             case 'unLinkAccount': $response = ( $transaction->unLinkAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
-            case 'changeStatus': $response = ( $transaction->updateAccountStatus($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'changeStatus': $response = ( $transaction->changeStatus($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'requestCard': $response = ( $transaction->requestCard($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'search': $response = ( $transaction->search($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($data), 3, "transsnet.log");*/ break;
-            //case 'payutility': $response = ( $transaction->ExGratiaPayments($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
+            case 'sendReverseTransactionNotification': $response = ( $transaction->sendReverseTransactionNotification($data)); return ($response);  break;
             case 'checkBalance': $response = ( $transaction->checkBalance($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
             case 'getStatement': $response = ( $transaction->getStatement($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            default: $response = ["transid"=>"","reference"=>"","responseCode"=>"401","Message"=>["status"=>"ERROR","method"=>$method,"data"=>"invalid command method found: ".$method]];error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($response), 3, "transsnet.log"); return json_encode($response);
+            case 'cashout': $response = ( $transaction->cashout($data)); return ($response);  break;
+            case 'reverseTransaction': $response = ( $transaction->reverseTransaction($data)); return ($response);  break;
+            default: 
+            $message = array();
+            $message['status']="ERROR";
+            $message['method']=$method ;
+            $result['resultcode'] = '078';
+            $result['result']='invalid method';
+            $message['data']=$result;
+            $respArray = ['transid'=>'','reference'=>'','responseCode' => 401, "Message"=>($message)];
+            error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($respArray), 3, "transsnet.log"); print_r(json_encode($respArray));
              
             
         }
