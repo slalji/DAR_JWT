@@ -71,21 +71,19 @@ class DB extends PDO {
                 return gmdate('Y-m-d H:i:s',$dt);
             }
         }
+        catch (TypeError $error) {
+            return $error->getMessage();
+        }
         catch(Exception $e){
             return date('Y-m-d H:i:s');
         }
        
     }
-    public static function toDate($dt){
-        if( $dt == date('Y-m-d',strtotime($dt)) ){
-            // date is in fact in one of the above formats
-            return $dt;
-        }
-        else
-        {
-            // date is something else.
-           return date('Y-m-d',$dt);
-        }
+
+    public static function toDate(int $dt){ 
+       
+       $ddate = date('Y-m-d',$dt);
+       return $ddate;
     }
     public static function getErrorResponse($data, $err, $ref){
             $message = array();
@@ -140,23 +138,24 @@ class DB extends PDO {
         $transaction = new Transactions();
         
         switch($method){
-            case 'openAccount':$response = ( $transaction->OpenAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'updateAccount':$response = ($transaction->UpdateAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'addCash': $response = ( $transaction->addCash($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'payUtility': $response = ( $transaction->payutility($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'fundTransfer': $response = ( $transaction->transferFunds($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'nameLookup':$response = ($transaction->NameLookup($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'linkAccount': $response = ( $transaction->linkAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
-            case 'unLinkAccount': $response = ( $transaction->unLinkAccount($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$response, 3, "transsnet.log");*/ break;
-            case 'changeStatus': $response = ( $transaction->changeStatus($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'requestCard': $response = ( $transaction->requestCard($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'search': $response = ( $transaction->search($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.json_encode($data), 3, "transsnet.log");*/ break;
-            case 'sendReverseTransactionNotification': $response = ( $transaction->sendReverseTransactionNotification($data)); return ($response);  break;
-            case 'checkBalance': $response = ( $transaction->checkBalance($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
-            case 'getStatement': $response = ( $transaction->getStatement($data)); return ($response); /*error_log("\r\n".date('Y-m-d H:i:s').' '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");*/ break;
+            case 'openAccount':$response = ( $transaction->OpenAccount($data)); return ($response);  break;
+            case 'updateAccount':$response = ($transaction->UpdateAccount($data)); return ($response);  break;
+            case 'addCash': $response = ( $transaction->addCash($data)); return ($response);  break;
+            case 'payUtility': $response = ( $transaction->payutility($data)); return ($response);  break;
+            case 'fundTransfer': $response = ( $transaction->transferFunds($data)); return ($response);  break;
+            case 'nameLookup':$response = ($transaction->NameLookup($data)); return ($response);  break;
+            case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); return ($response);  break;
+            case 'linkAccount': $response = ( $transaction->linkAccount($data)); return ($response);  break;
+            case 'unLinkAccount': $response = ( $transaction->unLinkAccount($data)); return ($response);  break;
+            case 'changeStatus': $response = ( $transaction->changeStatus($data)); return ($response);  break;
+            case 'requestCard': $response = ( $transaction->requestCard($data)); return ($response);  break;
+            case 'search': $response = ( $transaction->search($data)); return ($response);  break;
+            case 'checkBalance': $response = ( $transaction->checkBalance($data)); return ($response);  break;
+            case 'getStatement': $response = ( $transaction->getStatement($data)); return ($response);  break;
             case 'cashout': $response = ( $transaction->cashout($data)); return ($response);  break;
             case 'reverseTransaction': $response = ( $transaction->reverseTransaction($data)); return ($response);  break;
+            case 'sendReverseTransactionNotification': $response = ( $transaction->sendReverseTransactionNotification($data)); return ($response);  break;
+            case 'sendVoucherNotification': $response = ( $transaction->sendVoucherNotification($data)); return ($response);  break;
             default: 
             $message = array();
             $message['status']="ERROR";
@@ -172,5 +171,19 @@ class DB extends PDO {
 
     }
 }
+/*
+
+ReserverAPI & ReleaseAPI
+    needs revising aggressively reserver to suspense account, release only what is suspense. check accountNo and msisdn or reference or transid belonging to accountHolder
+Palmpay to MobileMoney & Palm to Bank
+    add accountHolderName if not palmpay or msisdn strlen(12)
+    selcom function of addCash will parse utilityref for bankcode and banknumber else mm prefex and mm number
+fundsTransfer(CASHIN)
+    sending dummy response to transsnet and adding funds to ledger
+
+PullingfundsfromCard
+card = visa mastercard to palmpay
+
+*/
 
 ?>

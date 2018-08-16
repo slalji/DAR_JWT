@@ -50,7 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($body)){
                 $response = $db->transaction($body->requestParams,$method);
                 $json = json_encode($response);
                 print_r($response);
-                error_log("\r\n".date('Y-m-d H:i:s').' response: '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");
+                //if($body->method !== 'search')
+                        error_log("\r\n".date('Y-m-d H:i:s').' response: '.$_SERVER['REMOTE_ADDR'].' '.$response, 3, "transsnet.log");
                 return ($response);
         }
         else{

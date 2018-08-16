@@ -1,17 +1,46 @@
 <?php
-ini_set('SMTP','myserver');
-ini_set('smtp_port',25);
-$to = 'salma@selcom.net';
-$headers  = "MIME-Version: 1.0" . "\r\n";
-$headers .= "Content-type: text/html; charset=iso-8859-1" . "\r\n";
-$headers  .= "From: NO-REPLY<no-reply@mydomain.com>" . "\r\n";
-$subject = "Confirmation For Request";
-$message = '<html>
-                <body>
-                    <p>Hello World</p> 
-                </body>
-            </html>';
-mail( $to, $subject, $message, $headers );
+
+function send_email($toemail, $toname, $subject, $body){
+
+
+	//include phpmailer
+	require_once('vendor/phpmailer/class.phpmailer.php');
+
+	//SMTP Settings
+	$mail = new PHPMailer(true);
+	//$mail->SetLanguage("en", 'phpmailer/language/');
+	$mail->SetLanguage("en", 'language');
+
+	$mail->IsSMTP();
+	$mail->Mailer = "smtp";
+	$mail->SMTPAuth   = true;
+	//$mail->SMTPSecure = "tls";
+
+  $mail->Host       = "smtp.mailtrap.io";
+  //$mail->Host       = "smtp.gmail.com";
+	//$mail->Port = 465;
+  $mail->Username   = "60c327adad8cbd";
+  $mail->Password   = "74c53ac6371764";
+
+
+	$mail->SetFrom('no-reply@selcom.net', 'Selcom API'); //from (verified email address)
+	$mail->Subject = $subject; //subject
+
+
+	//$body = preg_replace("/[\\]/",'',$body);
+	$mail->MsgHTML($body);
+	//
+
+	//recipient
+	$mail->AddAddress($toemail, $toname);
+
+	return $mail->Send();
+}
+
+if (send_email( 'salma@selcom.net', 'recepient name', 'reverse funds', 'reverse transaction ref num:' ))
+ echo "sent";
+else
+  echo "Error";
 
 die();
 require_once ("jwt_encode.php");

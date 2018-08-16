@@ -107,15 +107,23 @@ class DbHandler{
 	}
 
 	private function _get_card_info($id){
-
+		
 		$query = "SELECT balance, msisdn, id, name, language, status, state, accountNo, card, pin, failcount, active, stolen, alert, dealer, suspense, dailytrans, last_transaction, holdinglimit, dailylimit, tier, fuel_scheme, fuel_scheme_name, fuel_balance, fuel_last_transaction, fuel_client FROM card WHERE ";
 
-		if(($id)==16){
+		if(strlen($id)==16){
 			$query .= "card='$uid'";
-		}else{
-			$query .= "msisdn='$id'";
 		}
+		else if (strpos(strtolower($id), 'palmpay') !== false) {
 		
+			$query .= "accountNo='$id'";
+			
+		}
+		else {
+
+			$query .= "msisdn='$id'";
+			 
+		}
+	
 		
 		$row = $this->pdo_db->query($query)->fetch();
 
@@ -165,12 +173,14 @@ class DbHandler{
 			$resp["resultcode"] = "000";
 			$resp["info"] = $info;
 		}else{
+			
 			$resp["resultcode"] = "056";
 			$resp["result"] = "Card not found";
 		}
 
 		return $resp;
 	}
+	
 
 	private function _checkTransaction($msisdn,$transid){
 		$query = "SELECT id FROM transaction WHERE transid='$transid' and msisdn='$msisdn'";
@@ -688,7 +698,8 @@ class DbHandler{
 	 * @param $msisdn
 	 */
 	function switchOffCard($msisdn){
-		//$query = "UPDATE card SET active='0' where msisdn='$msisdn'";
+		//$query = "UPDATE card SET active='0'
+		// where msisdn='$msisdn'";
 
 		//$this->pdo_db->query($query);
 	}
@@ -1778,10 +1789,11 @@ function lookup($utilitycode,$utilityref, $amount, $msisdn) {
 }
 //fundTransfer
 function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
+	 
 		$proceed = "OK";
 		$vendor = "TRANSSNET";
 		$service = "fundTransfer";
-		$channel = "TPAY";
+		$channel = "PALMPAY";
 		
 		// check if transaction exists
 		$chk_resp = $this->_checkTransaction($msisdn,$transid);
@@ -1797,6 +1809,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 				$name = $info['name'];
 				$dealer = 'Transsnet';//$info['dealer'];//check if Transsnet
 				$cardnum = $info['cardnum'];
+				$account_no = $info['accountNo'];
 
 				/*$settings = $this->_get_card_settings();
 
@@ -1814,7 +1827,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 
 				// load account settings
 				//$query = "SELECT balance, status, c2b, b2c, id, tariff, name FROM card.account WHERE utilitycode='P2P'";
-				$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE msisdn=$msisdn";
+				$query = "SELECT id, balance, status, accountNo, /*c2b, b2c, id, tariff,*/ CONCAT(firstname, ' ', lastname) as name FROM accountprofile WHERE accountNo=$account_no";
 				
 				$row = $this->pdo_db->query($query)->fetch();
 				if (empty($row)){
@@ -1833,7 +1846,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 				 
 				//$account_c2b = $row['c2b'];
 				$account_id = $row['id'];
-				$account_no = $row['accountNo'];
+				//$account_no = $row['accountNo'];
 				//$account_tariff = $row['tariff'];
 				$account_name = $row['name'];
 			 
@@ -1932,15 +1945,15 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 				}
 //transfer to msisdn
 
-				if (strlen($utilityref)!=16){
+				/*if (strlen($utilityref)!=16){
 					if(strlen($utilityref)!=12){
 						if(strlen($utilityref)==10){
 							$utilityref = "255" . substr($utilityref, 1);
 						}
 					}
-				}
+				}*/
 				//cannot have same card number
-				if(($cardnum==$utilityref) || ($msisdn==$utilityref)) {
+				if(($account_no==$utilityref) || ($msisdn==$utilityref)) {
 					$result = "057";
 					$reply = "Invalid destination card";
 					$proceed = "NOK";
@@ -1955,11 +1968,16 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 
 					return $resp;
 				}
+				/*
+				**********Destination Account **********
+				***********check AccountNo for dest account *********
+				*/
+				
 
 				// get destination card details
-			   $dest_card_resp = $this->_get_card_info($utilityref);
+			  $dest_card_resp = $this->_get_card_info($utilityref);  //change _get_card to _get_account
 			  
-			   
+			 
 				if($dest_card_resp['resultcode']!="000"){
 					$result= "056";
 					$reply = "Destination card not found";
@@ -2502,7 +2520,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 			return $err;
 	}
 	//reserveFunds
-	function reserveAccount($transid,$reference,$msisdn,$amount){
+	function freezeAccount($transid,$reference,$msisdn,$amount){
 		 
 		$proceed = "OK";
 		$vendor = "TRANSSNET";
@@ -2636,7 +2654,7 @@ function fundTransfer($transid,$reference,$utilityref,$msisdn,$amount){
 	}
 
 	//unReserveFunds
-	function unReserveAccount($transid,$reference,$transref,$msisdn,$amount){
+	function unFreezeAccount($transid,$reference,$transref,$msisdn,$amount){
 		 
 		$proceed = "OK";
 		$vendor = "TRANSSNET";
