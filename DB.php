@@ -135,6 +135,7 @@ class DB extends PDO {
     
     }*/
     public function transaction($data, $method){
+        $mnos = array("AMCASHIN" => "Airtel Money", "TPCASHIN"  =>  "Tigo Pesa","VMCASHIN"  =>  "Vodacom M-pesa","EZCASHIN"  =>  "Zantel EzyPesa","SPCASHIN"  =>  "Selcom Card");
         $transaction = new Transactions();
         
         switch($method){
@@ -143,19 +144,24 @@ class DB extends PDO {
             case 'addCash': $response = ( $transaction->addCash($data)); return ($response);  break;
             case 'payUtility': $response = ( $transaction->payutility($data)); return ($response);  break;
             case 'fundTransfer': $response = ( $transaction->transferFunds($data)); return ($response);  break;
+            case 'fundTransferBank': $response = ( $transaction->transferFundsBank($data)); return ($response);  break;
+            case 'fundTransferWallet': $response = ( $transaction->fundTransferWallet($data)); return ($response);  break;            
             case 'nameLookup':$response = ($transaction->NameLookup($data)); return ($response);  break;
             case 'transactionLookup': $response = ($transaction->TransactionLookup($data)); return ($response);  break;
             case 'linkAccount': $response = ( $transaction->linkAccount($data)); return ($response);  break;
             case 'unLinkAccount': $response = ( $transaction->unLinkAccount($data)); return ($response);  break;
             case 'changeStatus': $response = ( $transaction->changeStatus($data)); return ($response);  break;
             case 'requestCard': $response = ( $transaction->requestCard($data)); return ($response);  break;
-            case 'search': $response = ( $transaction->search($data)); return ($response);  break;
+            case 'search': $response = ( $transaction->search($data, 'req')); return ($response);  break;
             case 'checkBalance': $response = ( $transaction->checkBalance($data)); return ($response);  break;
             case 'getStatement': $response = ( $transaction->getStatement($data)); return ($response);  break;
             case 'cashout': $response = ( $transaction->cashout($data)); return ($response);  break;
             case 'reverseTransaction': $response = ( $transaction->reverseTransaction($data)); return ($response);  break;
             case 'sendReverseTransactionNotification': $response = ( $transaction->sendReverseTransactionNotification($data)); return ($response);  break;
             case 'sendVoucherNotification': $response = ( $transaction->sendVoucherNotification($data)); return ($response);  break;
+            case 'freezeFunds': $response = ( $transaction->freezeFunds($data)); return ($response);  break;
+            case 'unFreezeFunds': $response = ( $transaction->unFreezeFunds($data)); return ($response);  break;
+            case 'pullFromCard': $response = ( $transaction->pullFromCard($data)); return ($response);  break;
             default: 
             $message = array();
             $message['status']="ERROR";
@@ -171,19 +177,5 @@ class DB extends PDO {
 
     }
 }
-/*
-
-ReserverAPI & ReleaseAPI
-    needs revising aggressively reserver to suspense account, release only what is suspense. check accountNo and msisdn or reference or transid belonging to accountHolder
-Palmpay to MobileMoney & Palm to Bank
-    add accountHolderName if not palmpay or msisdn strlen(12)
-    selcom function of addCash will parse utilityref for bankcode and banknumber else mm prefex and mm number
-fundsTransfer(CASHIN)
-    sending dummy response to transsnet and adding funds to ledger
-
-PullingfundsfromCard
-card = visa mastercard to palmpay
-
-*/
 
 ?>

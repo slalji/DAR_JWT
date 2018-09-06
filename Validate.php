@@ -55,7 +55,16 @@ class Validate
             /*
              * Look for the 'authorization' header
              */
-            $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : $headers['authorization'];
+            $authHeader = null;
+          
+            if (isset($headers['Authorization'])) 
+                $authHeader = $headers['Authorization'];
+            else if (isset($headers['authorization']))
+                $authHeader = $headers['authorization'];
+            
+               
+
+            //            $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : $headers['authorization'];
 
             //if (isset($headers['Authorization']) || isset($headers['authorization'])) {
 
@@ -167,52 +176,60 @@ class Validate
        $conn = DB::getInstance();
         //$accountNo = Validate::_getAccountNo($customerNo);
 
-        $sql ="select suspense from card where id ='$accountNo'";
+        $sql ="select suspense from card where accountNo ='$accountNo'";
 
         $stmt = $conn->prepare( $sql );
         $stmt->execute();
         $result = $stmt->fetchColumn();
+       
         return $result;
 
     }
-    public static function _checkRef($payload){
+    public static function _checkRef($data){
         //get accountNo;
        $conn = DB::getInstance();
-        $ref = $payload->reference;
-       $flag=true;
+       
+        $ref = $data->utilityref;
+       $flag='true';
         try{
 
-            $sql ="select utilitycode, utilityref, dealer, amount from transaction where reference ='$ref'";
+            $sql ="select utilitycode, utilityref, dealer, amount, reference, transid from transaction where reference ='$ref'";
 
             $stmt = $conn->prepare( $sql );
             $stmt->execute();
             $rows = $stmt->fetch( PDO::FETCH_ASSOC );
 
-            if(!$rows)
-               return false;
-            $result = ($rows);
-
-
-            if($result['utilitycode'] != 'reserveAccount'){
-                $flag=false;
+            if($rows)              
+                $result = ($rows);
+            else
+                return 'false';
+//die(print_r($data).' '. print_r($rows));
+//
+            if($result['utilitycode'] !== 'reserveAccount'){
+                return $flag='false';
+               
             }
-            else if ($result['utilityref'] != $payload->msisdn){
-                $flag=false;
+            else if ($result['utilityref'] !==  $data->accountNo){
+                return $flag='false';
+                
             }
             else if (strtoupper($result['dealer']) !='TRANSSNET'){
-                $flag=false;
+                return  $flag='false';
+               
             }
-            else if ($result['amount'] !=$payload->amount){
-                $flag=false;
-            }
+            else if ($result['transid'] != $data->transref){
+                return $flag='false';
+            } 
 
         }
         catch(Exception $e){
-            $flag=false;
+           return  $flag='false';
             //return false;
+           
         }
+        
         //die(print_r((int)$flag));
-        return $flag;
+        //return $flag;
 
     }
     public static function _checkCard($accountNo){
@@ -227,7 +244,7 @@ class Validate
             if ($result){
                 $res = $result[0];
           
-                if ($res['active'] == 1)
+                if ($res['active'] == 0)
                     return 'inactive';
                 else  if ($res['status'] == 0)
                     return 'inactive';
@@ -249,7 +266,7 @@ class Validate
 
     }
 
-    public static function setTinfo($payload){
+    public static function setTinfo($payload, $ref){
 
         //get accountNo;
        $conn = DB::getInstance();
@@ -260,7 +277,7 @@ class Validate
 
         try{
             $arr['transid'] = isset($payload['transid'])?$payload['transid']:'';
-            $arr['reference'] = isset($payload['reference'])?$payload['reference']:'';
+            $arr['reference'] = $ref;
             $arr['transtype'] = isset($payload['transtype'])?$payload['transtype']:'';
             $arr['geocode'] = isset($payload['geocode'])?json_encode($payload['geocode']):'';
             $arr['comments'] = isset($payload['comments'])?$payload['comments']:'';
@@ -284,7 +301,7 @@ class Validate
             return $payload;
         }
         catch (Exception $e) {
-            return $e->getMessage();
+            return 'setTinfo resultcode:067.1'.$e->getMessage();
             return false;
         }
 
@@ -343,7 +360,15 @@ class Validate
             $stmt->execute();
             if ($stmt->rowCount() > 0){
                 $res = $stmt->fetch(PDO::FETCH_ASSOC);
-                return 'Account already exists accountNo:' .($res['accountNo']).' customerNo:'.$payload->customerNo .' msisdn: '.$payload->msisdn;
+                return 'Account already exists';// .($res['accountNo']).' customerNo:'.$payload->customerNo .' msisdn: '.$payload->msisdn;
+            }
+            //check card if msisdn exists return false
+            $sql ="select msisdn from card where msisdn='".$payload->msisdn."'";
+            $stmt = $conn->prepare( $sql );
+            $stmt->execute();
+            if ($stmt->rowCount() > 0){
+                $res = $stmt->fetch(PDO::FETCH_ASSOC);
+                return 'Account as card already exists';// .($res['accountNo']).' customerNo:'.$payload->customerNo .' msisdn: '.$payload->msisdn;
             }
            //no check for accountNo and state as its new*/
         }
@@ -359,6 +384,9 @@ class Validate
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
+        }
+        if (isset($payload->customerNo) || !empty($payload->customerNo)) {
+            return 'You cannot change your';
         }
 
        return  $state = self::checkAccount($payload->accountNo); 
@@ -409,18 +437,16 @@ class Validate
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {          
             return 'missing parameter accountNo  ';
         }
-        if (!isset($payload->msisdn) || empty($payload->msisdn)) {          
+        /*if (!isset($payload->msisdn) || empty($payload->msisdn)) {          
             return 'missing parameter msisdn  ';
-        }
+        }*/
         if (!isset($payload->transid) || empty($payload->transid)) { 
             return 'missing parameter transid';
         }
         if (!isset($payload->transref) || empty($payload->transref)) {
-            return 'missing parameter transref. transref is the transaction id you would like to lookup, where as transid is this current transaction';
+            return 'missing parameter transref';
         }
-        if (!Validate::_checkTransid($payload->transref, $payload->msisdn)) {
-            return 'this transaction does not exist';
-        }
+                   
        return  $state = self::checkAccount($payload->accountNo); 
         //die($state);      
        
@@ -485,29 +511,27 @@ class Validate
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
         }
-      // return  $state = self::checkAccount($payload->accountNo); 
-        //die($state); 
+  
         $conn = DB::getInstance(); 
         $sql ="select msisdn from accountprofile where accountNo='".$payload->accountNo."'";
         $stmt = $conn->prepare( $sql );
         $stmt->execute();
         $result = $stmt->fetchColumn();
-        $msisdn = $result;//)?false:$result['msisdn'];      
+        $msisdn = $result;    
       
          if ($msisdn == ''){
            
             return 'account does not exist';
-         }     
-       
+         }       
           
 
        
     }
-    public static function reserveAccount($payload) {
+    public static function freezeFunds($payload) {
        
-        if (!isset($payload->accountNo) || empty($payload->accountNo))
-            if(!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return  'accountNo or missing parameter msisdn';
+        if (!isset($payload->accountNo) || empty($payload->accountNo)){
+            
+            return  'accountNo or missing parameter accountNo';
         }
 
         if (!isset($payload->transid) || empty($payload->transid)) {
@@ -516,7 +540,10 @@ class Validate
         if (!isset($payload->amount) || empty($payload->amount)) {
             return 'missing parameter amount';
         }
-       return  $state = self::checkAccount($payload->accountNo); 
+        if (self::_getSuspense($payload->accountNo) >0 )
+            return 'you cannot reserve funds at this time';
+       
+        return  $state = self::checkAccount($payload->accountNo); 
         //die($state);      
        
           
@@ -524,35 +551,32 @@ class Validate
       
 
     }
-    public static function unFreezeAccount($payload) {
+    public static function unFreezeFunds($payload) {
        
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return  'missing parameter accountNo';
         }
-        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return  'missing parameter msisdn';
-        }
-        if (!isset($payload->reference) || empty($payload->reference)) {
-            return  'missing parameter reference';
+       
+        if (!isset($payload->utilityref) || empty($payload->utilityref)) {
+            return  'missing parameter utilityref';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
         }
-        if (!isset($payload->amount) || empty($payload->amount)) {
-            return 'missing parameter amount';
-        }
+         
 
         if(isset($payload->accountNo) && Validate::_getSuspense($payload->accountNo) == 0){
             return 'You do not have funds to release at this time';
         }
         /*check ref and msisdn reserveaccount*/
-        $flag = Validate::_checkRef($payload);
-
-        if(Validate::_checkRef($payload) != 0){
+        //$flag = Validate::_checkRef($payload);
+        $check = Validate::_checkRef($payload);
+        //die($check);
+        if($check == 'false' ){
             return 'reference is invalid';
             //die(print_r($err));
         }
-
+      
        return  $state = self::checkAccount($payload->accountNo); 
         //die($state);      
        
@@ -563,9 +587,10 @@ class Validate
     public static function payUtility($payload)    {
         //die(print_r($payload));
        
-        /*if (!isset($payload->msisdn) || empty($payload->msisdn))  {
-            return 'missing parameter msisdn';
-        }*/
+        if (!isset($payload->accountNo) || empty($payload->accountNo))  {
+            return 'missing parameter accountNo';
+        }
+       
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
         }
@@ -578,9 +603,9 @@ class Validate
         if (!isset($payload->amount) || empty($payload->amount)) {
             return 'missing parameter amount';
         }
-        if (!isset($payload->currency) || empty($payload->currency)) {
+        /*if (!isset($payload->currency) || empty($payload->currency)) {
             return 'missing parameter currency ';
-        }
+        }*/
        return  $state = self::checkAccount($payload->accountNo);
        
            
@@ -588,7 +613,7 @@ class Validate
     }
     public static function addCash($payload)    {
        
-        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter msisdn';
         }
         if (!isset($payload->transid) || empty($payload->transid)) {
@@ -607,6 +632,7 @@ class Validate
         if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
         }
+        
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
         }
@@ -694,18 +720,19 @@ class Validate
         if ($payload->vendorType==strtolower('bank') && (isset($payload->cardHolderName) || isset($payload->cardNumber) || isset($payload->exp) ||  isset($payload->pin) ||  isset($payload->confirmPin) ||  isset($payload->cvv))){
             return "invalid parameters found";
         }
-        
         return  $state = self::checkAccount($payload->accountNo); 
+        
+        
         
 
     }
     public static function unLinkAccount($payload){
-        /*if (!isset($payload->accountNo) || empty($payload->accountNo)) {
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {
             return 'missing parameter accountNo';
-        }*/
-        if (!isset($payload->msisdn) || empty($payload->msisdn)) {
-            return 'missing parameter msisdn';
         }
+       /* if (!isset($payload->msisdn) || empty($payload->msisdn)) {
+            return 'missing parameter msisdn';
+        }*/
         if (!isset($payload->transid) || empty($payload->transid)) {
             return 'missing parameter transid';
         }
@@ -719,8 +746,12 @@ class Validate
                 return 'missing parameter either bankAccountNumber or cardNumber';
             }
         }
-        
+        if ($payload->vendorType==strtolower('bank') && (!isset($payload->bankAccountNumber) || empty($payload->bankAccountNumber))) {
+            return 'missing parameter bankAccountNumber ';
+        }
         return  $state = self::checkAccount($payload->accountNo); 
+        
+
         
     }
     public static function cashout($payload) {
@@ -735,7 +766,7 @@ class Validate
             return 'missing parameter amount';
         }
 
-        return  $state = self::checkAccount($payload->accountNo);   
+          
 
     }
     public static function reverseTransaction($payload){
@@ -756,6 +787,58 @@ class Validate
         if (!Validate::_checkTransid($payload->transref, $payload->msisdn)) {
             return 'this transaction does not exist';
         }
+       return  $state = self::checkAccount($payload->accountNo); 
+        //die($state);      
+       
+          
+
+      
+    }
+    public static function pullFromCard($payload){
+       
+
+        if (!isset($payload->accountNo) || empty($payload->accountNo)) {          
+            return 'missing parameter accountNo  ';
+        }
+        
+        if (!isset($payload->transid) || empty($payload->transid)) { 
+            return 'missing parameter transid';
+        }
+        if (!isset($payload->amount) || empty($payload->amount)) {
+            return 'missing parameter amount';
+        }
+        if (!isset($payload->cardHolderName) || empty($payload->cardHolderName)) {
+            return 'missing parameter cardHolderName';
+        } 
+        if (!isset($payload->cardNumber) || empty($payload->cardNumber)) {
+            return 'missing parameter cardNumber';
+        }
+        if (!isset($payload->cardType) || empty($payload->cardType)) {
+            return 'missing parameter cardType';
+        }
+        if (!isset($payload->exp) || empty($payload->exp)) {
+            return 'missing parameter exp for expiry date in format mm/yy';
+        }
+        if (!isset($payload->cvv) || empty($payload->cvv)) {
+            return 'missing parameter cvv, 3 digits from the back of your card';
+        }
+       if (!is_numeric($payload->cardNumber) || strlen($payload->cardNumber) != 16){
+            return 'invalid card number format';
+        }
+           
+            $expDate = explode('/',$payload->exp);
+            if(!isset($expDate[1]) || $expDate[0]>12 )
+             return 'invalid expiry date format of mm/yy '.$expDate[0];
+            if(isset($expDate[1]) && $expDate[1]>99 )
+             return 'invalid expiry date format of mm/yy '.$expDate[0].'/'.$expDate[1];            
+         
+         
+
+        if('20'.$expDate[1]. str_pad($expDate[0],2,'0') < date('Ym')) {
+                return 'card is expired';
+            }
+      
+       
        return  $state = self::checkAccount($payload->accountNo); 
         //die($state);      
        

@@ -37,10 +37,11 @@ class Transactions
         $arr = null;
         $accountNo = $payload['accountNo'];//$this->_getAccountNo($data['customerNo']);
 
-        $transid=$data['transid'];
+        // following you cannot update! msisdn, perhaps manual check with Rosario or Sameer
         unset($payload['transid']);
         unset($payload['customerNo']);
         unset($payload['accountNo']);
+        unset($payload['msisdn']);
         $sql='';
         
         try{
@@ -81,14 +82,14 @@ class Transactions
         $profile['dob']=isset($data['dob'])?$data['dob']:null;
         $profile['currency']=isset($data['currency'])?strtoupper($data['currency']):'TZS';
         $profile['status']=1;
-        //$profile['active']=isset($data['active'])?$data['active']:0; //acive=0 closed=1
+        $profile['active']=1;//active=1 confirmed my Rosario 29 Aug 2018
         $profile['nationality']=isset($data['nationality'])?ucfirst($data['nationality']):'';
         $profile['balance']=0;
         $profile['tier']=isset($data['tier'])?strtoupper($data['tier']):'A';
 
         $cols = null;
         $vals = null;
-        die(print_r($profile['dob']));
+        //die(print_r($profile['dob']));
         try{
 
             foreach($profile as $key => $val){
@@ -129,7 +130,7 @@ class Transactions
         return $result;
 
     }
-    public function get_msisdn($accountNo){
+    public function _get_msisdn($accountNo){
 
         $sql ="select msisdn from accountprofile where accountNo ='$accountNo' ";
     
@@ -182,9 +183,26 @@ class Transactions
             return false;
 
     }
+        
+    public function _getLinkedCard($accountNo, $name, $number, $cardType, $exp, $cvv){
+
+        $sql ="select * from vendor where accountNo ='$accountNo' && vendorType='card' && cardHolderName = '$name' && cardNumber = '$number' && exp='$exp' && cvv=$cvv ";
+
+        $stmt = $this->conn->prepare( $sql );
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+       
+        if (!empty($result))
+            return ($result);
+        else
+            return false;
+
+    }
     public function _getResponse($method, $res, $transid,$ref){
         if (isset($res['transid']))
             unset($res['transid']);
+       if (isset($res['reference']))
+            unset($res['reference']);
         $message = array();
         $message['status']= 'SUCCESS';
         $message['method']=$method;
@@ -196,7 +214,7 @@ class Transactions
 
     }
     public function _getError($method, $e, $code, $transid, $reference){
-       // $this->_getError( __FUNCTION__,$e->getMessage(), 076,$payload['transid'], $this->reference);
+       // $this->_getError('requestCard',$e->getMessage(), 076,$payload['transid'], $this->reference);
          $message = array();
             $message['status']="ERROR";
             $message['method']=$method ;
@@ -398,7 +416,7 @@ function _checkLuhn($card, $create = false){
         return $segments[0].$checksum;
     }
 }
-public function  _checkTcard($accountNo){
+private function  _checkTcard($accountNo){
     $sql = 'select id from tcard where accountNo="'.$accountNo.'"';
     $stmt = $this->conn->prepare( $sql );
     $stmt->execute();
@@ -407,7 +425,7 @@ public function  _checkTcard($accountNo){
     return $result;
 
 }
-function _mask ( $str, $start = 0, $length = null ) {
+private function _mask ( $str, $start = 0, $length = null ) {
     $mask = preg_replace ( "/\S/", "X", $str );
     if( is_null ( $length )) {
         $mask = substr ( $mask, $start );
@@ -417,6 +435,22 @@ function _mask ( $str, $start = 0, $length = null ) {
         $str = substr_replace ( $str, $mask, $start, $length );
     }
     return $str;
+}
+private function _bankLookup($utilitycode, $utilityref){
+    $sql = "select bankAccountName from vendor where bankAccountNumber = '$utilityref'";
+    $stmt = $this->conn->query( $sql );
+    $res = $stmt->fetch(PDO::FETCH_ASSOC);
+    if($res){
+        return $res['bankAccountName'];
+    }
+}
+private function _mnoLookup($utilityref){
+    $sql = "select concat(firstName,' ',lastName) as name from accountProfile where msisdn = '$utilityref'";
+    $stmt = $this->conn->query( $sql );
+    $res = $stmt->fetch(PDO::FETCH_ASSOC);
+    if($res){
+        return $res['name'];
+    }
 }
  
     public function openAccount($data)   {
@@ -429,8 +463,8 @@ function _mask ( $str, $start = 0, $length = null ) {
 
             $payload = (array)$data;
             $payload['accountNo'] = 'PALMPAY'.DB::getToken(12);
-            if(isset(($payload['dob'])))
-                $dob=DB::toDate('Y-m-d',$payload['dob']);
+            /*if(isset(($payload['dob'])))
+                $dob=DB::toDate('Y-m-d',$payload['dob']);*/
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
 
@@ -466,9 +500,9 @@ function _mask ( $str, $start = 0, $length = null ) {
 
             $payload = (array)$data;
             $tier =isset($payload['tier'])?strtoupper($payload['tier']):'A';
-            if(isset($payload['dob'])){
+            /*if(isset($payload['dob'])){
                 $payload['dob'] = DB::toDate((int)$payload['dob']);           
-            }
+            }*/
 
             //update accountProfile DB
             $result = $this->_updateAccountProfile($payload);
@@ -542,7 +576,7 @@ function _mask ( $str, $start = 0, $length = null ) {
        
             //die(print_r($this->conn->lastInsertId()));
 
-            $payload['reference']=$this->reference;
+           // $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
                         
             $respArray = $this->_getResponse('linkAccount',$payload, $data->transid, $this->reference);
@@ -568,18 +602,19 @@ function _mask ( $str, $start = 0, $length = null ) {
             $payload = (array)$data;
              
             //$accountNo = $payload['accountNo'];
-            $msisdn = $payload['msisdn'];
+            //$msisdn = $payload['msisdn'];
+            $accountNo = $payload['accountNo'];
             $vendoraccountNo = $payload['vendorType'] == 'bank'?$payload['bankAccountNumber']:$payload['cardNumber'];
             $type = $payload['vendorType'] == 'bank'?'bankAccountNumber':'cardNumber';
             $statustxt = $payload['statustxt'];
             $masked = $this->_mask($vendoraccountNo,0,strlen($vendoraccountNo)-4);
             $msg= array('statustxt' => $statustxt,'description'=>$masked.' account closed ');
-            $sql = "delete from vendor WHERE $type='$vendoraccountNo' && msisdn='$msisdn'";
+            $sql = "delete from vendor WHERE $type='$vendoraccountNo' && accountNo='$accountNo'";
 
             $stmt = $this->conn->prepare($sql); 
             $stmt->execute();
             if (!$stmt->rowCount()) 
-                throw new Exception ('Error UnLinkAccount, check parameter values ');       
+                throw new Exception ('Error check parameter values');       
 
             $payload['reference']=$this->reference;
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
@@ -587,20 +622,13 @@ function _mask ( $str, $start = 0, $length = null ) {
             $result['resultcode']='102';
             
             $result['result']=$msg;
-            $res=$result;
+            $res=$msg;
             
-            $respArray = $this->_getResponse('unLinkAccount',$res, $payload['transid'], $this->reference);
+            $respArray = $this->_getResponse(__FUNCTION__,$res, $payload['transid'], $this->reference);
             
         }catch (Exception $e) {
 
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='unLinkAccount';//.$e->getMessage()." : ";
-            $result['resultcode'] ='064';
-            $result['result']=$e->getMessage();
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
+            
             $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'064',$data->transid, $this->reference);
         }
         return (json_encode($respArray));
@@ -610,104 +638,110 @@ function _mask ( $str, $start = 0, $length = null ) {
         $sql=null;
         try{
             $err = Validate::nameLookup($data);
-           
+           $flag=false;
             if (!empty($err))
                 throw new Exception($err);
                 
             $payload = (array)$data;
-            
-            $where =null;
+           
+            $accountNo = $payload['accountNo'];
+           
 
-
-            if(!isset($payload['accountNo'])){
-                $where .= isset($payload['customerNo'])?'where customerNo="'.$payload['customerNo'].'"':' where msisdn="'.$payload['msisdn'].'"';
+                
+           if (!isset($payload['utilitycode'])  &&  isset($payload['utilityref'])){
+                
+                $res = $this->_mnoLookup($payload['utilityref']);
+                if($res)
+                    return json_encode($respArray = $this->_getResponse(__FUNCTION__,$res, $payload['transid'], $this->reference));
+                else
+                    throw new Exception ('invalid account');
             }
-            else
-                $where = "where accountNo='".$payload['accountNo']."'";
-
-            $sql ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'false\'),1,\'true\') AS statustxt, REPLACE(REPLACE(active,0,\'true\'),1,\'false\') AS activetxt, email, addressLine1,addressCity, addressCountry,dob as dateofbirth,state, gender, nationality, currency, balance, lastupdated from accountprofile '.$where;
-
-            $stmt = $this->conn->query( $sql );
-            $res = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            $stmt_b = $this->conn->query('select bankName, bankBranch, bankAccountName, bankAccountNumber from vendor where vendorType="bank" && accountNo="'.$payload['accountNo'].'"');
-            $res_b = $stmt_b->fetch(PDO::FETCH_ASSOC);
+          else if (isset($payload['utilitycode'])  &&  isset($payload['utilityref'])){
+                               
+               $res = $this->_bankLookup($payload['utilitycode'],$payload['utilityref']);
+                if ($res)
+                    return json_encode($respArray = $this->_getResponse(__FUNCTION__,$res, $payload['transid'], $this->reference));
+                else
+                    throw new Exception ('invalid account'); 
+            } 
             
-            //PALMPAY628422111032
-            $stmt_c = $this->conn->query('select cardHolderName, cardNumber,cardType, exp from vendor where vendorType="card" && accountNo="'.$payload['accountNo'].'"');
-            $res_c = $stmt_c->fetch(PDO::FETCH_ASSOC);
-            if (!empty($res_b) && !empty($res_c))
-                $merge = array_merge($res_b, $res_c);
-            else if (!empty($res_b))
-                $merge = $res_b;
-            else if (!empty($res_c))
-                $merge = $res_c;
+            $sql ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'close\'),1,\'open\') AS statustxt,  lastupdated from accountprofile  where accountNo="'.$accountNo.'"';
+                
+                //$sql ="SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'false\'),1,\'true\') AS statustxt, REPLACE(REPLACE(active,1,\'true\'),0,\'false\') AS activetxt, email, addressLine1,addressCity, addressCountry,dob as dateofbirth,state, gender, nationality, currency, balance, lastupdated from accountprofile where accountNo = '$accountNo'";
 
-            if (!empty($merge)){
-                foreach($merge as $key => $val){
-                    if ($key == 'bankAccountNumber' || $key == 'cardNumber')
-                        $res[$key] = $this->_mask($val,0,strlen($val)-4);
-                    else
-                    $res[$key] = $val;
+                $stmt = $this->conn->query( $sql );
+                $res = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                $stmt_b = $this->conn->query('select bankName, bankBranch, bankAccountName, bankAccountNumber from vendor where vendorType="bank" && accountNo="'.$payload['accountNo'].'"');
+                $res_b = $stmt_b->fetch(PDO::FETCH_ASSOC);
+                
+                //PALMPAY628422111032
+                $stmt_c = $this->conn->query('select cardHolderName, cardNumber,cardType, exp from vendor where vendorType="card" && accountNo="'.$payload['accountNo'].'"');
+                $res_c = $stmt_c->fetch(PDO::FETCH_ASSOC);
+                if (!empty($res_b) && !empty($res_c))
+                    $merge = array_merge($res_b, $res_c);
+                else if (!empty($res_b))
+                    $merge = $res_b;
+                else if (!empty($res_c))
+                    $merge = $res_c;
+
+                if (!empty($merge)){
+                    foreach($merge as $key => $val){
+                        if ($key == 'bankAccountNumber' || $key == 'cardNumber')
+                            $res[$key] = $this->_mask($val,0,strlen($val)-4);
+                        else
+                        $res[$key] = $val;
+                    }
                 }
+            
+                
+                $respArray = $this->_getResponse(__FUNCTION__,$res, $payload['transid'], $this->reference);
             }
-           
-            
-            $respArray = $this->_getResponse('nameLookup',$res, $payload['transid'], $this->reference);
-        }
-        catch (Exception $e) {
-
-           /* $message = array();
-            $message['status']="ERROR";
-            $message['method']='nameLookup';//.$e->getMessage()." : ";//.$sql;
-            $result['resultcode'] ='065';
-            $result['result']=$e->getMessage().' : '.$sql;
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'080',$data->transid, $this->reference);
+        //}
+            catch (Exception $e) {
 
             
+                $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'080',$data->transid, $this->reference);
+
+                
+            }
+        
+            return (json_encode($respArray));
         }
-       
-        return (json_encode($respArray));
-    }
-    public function transactionLookup($data)   {
-        try{
-            //check for required fields eg transid return accountprofile info of this transid
-            $err = Validate::transactionLookup($data);
-            if (!empty($err))
-                throw new Exception($err);
-
-            $payload = (array)$data;            
-            $account = $payload['accountNo'];
-            $msisdn = $this->get_msisdn($account);  
-
-                    /*transref is the needle transid and msisdn should belong*/
-            $sql ="select fulltimestamp,t.transid,t.reference,msisdn,amount, message,name,utilitycode,utilityref, transtype, geocode,posId, tinfo.comments from transaction as t INNER JOIN tinfo ON tinfo.transid=t.transid where t.transid = '".$data->transref."' && msisdn='$msisdn'";
-           
-            $stmt = $this->conn->query( $sql );
-            
-            $res = $stmt->fetch(PDO::FETCH_ASSOC);
-             
-           
-            $respArray = $this->_getResponse('transactionLookup',$res, $payload['transid'], $this->reference);
+    
+        public function transactionLookup($data)   {
+            try{
+                //check for required fields eg transid return accountprofile info of this transid
+                $err = Validate::transactionLookup($data);
+                if (!empty($err))
+                    throw new Exception($err);
+    
+                $payload = (array)$data;            
+                $account = $payload['accountNo'];
+                $msisdn = $this->_get_msisdn($account);
+               
+                        /*transref is the needle transid and msisdn should belong*/
+                $sql ="select fulltimestamp,t.transid,t.reference,msisdn,amount, message,name,utilitycode,utilityref, transtype, geocode,posId, tinfo.comments from transaction as t LEFT JOIN tinfo ON tinfo.transid=t.transid where t.transid = '".$data->transref."' && msisdn='$msisdn'";
+               
+                $stmt = $this->conn->query( $sql );
+                
+                $res = $stmt->fetch(PDO::FETCH_ASSOC);
+                if(!$res ){
+                    $err = "this transaction does not exist";
+                    throw new Exception ($err);
+                }
+                   
+                
+                else
+                    $respArray = $this->_getResponse('transactionLookup',$res, $payload['transid'], $this->reference);
+            }
+            catch (Exception $e) {
+    
+               $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'066',$data->transid, $this->reference);
+    
+            }
+            return (json_encode($respArray));
         }
-        catch (Exception $e) {
-
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='transactionLookup';//.$e->getMessage()." : ";
-            $result['resultcode'] ='066';
-            $result['result']=$e->getMessage();
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'066',$data->transid, $this->reference);
-
-        }
-        return (json_encode($respArray));
-    }
     public function transferFunds($data)   {
         try{
             $result=null;
@@ -717,60 +751,124 @@ function _mask ( $str, $start = 0, $length = null ) {
                 throw new Exception($err);
                
             $payload = (array)$data;
+            $flag = 'P2P';  
+            $msisdn = self::_get_msisdn($payload['accountNo']);
+            $utilityref = self::_get_msisdn($payload['utilityref']);
 
-            $msisdn = isset($payload['msisdn'])?$payload['msisdn']:self::get_msisdn($payload['accountNo']);
-            //check sender card status active state
-            $active = Validate::_checkCard($payload['accountNo']);
-            if ($active != 'active'){
-                $err="Account Status ".$active;
-                throw new Exception($err);
-            }
-            
-            //check receiver card status active state
-            
-           
-            /*$active = Validate::_checkCard($payload['utilityref']);
-           
-            if ($active != 'active'){
-                $err="Account Status Error: ".$active;
-                
-                throw new Exception($err);
-            }*/
-
-            $payload['reference']=$this->reference;
-           
-
+             
             //save extra info into tinfo table
-            if(!Validate::setTinfo($payload)){
+            if(!Validate::setTinfo($payload, $this->reference)){
                 $err="Internal Error 070";
                 throw new Exception($err);
             }
 
-            $payload['fulltimestamp'] = date('Y-m-d H:i:s');
-            $payload['method'] = 'transferFunds';
-
+             
+           //transid, reference, accountNo, accountNo to receiver,amount to transfer
+              
             $selcom = new DbHandler();
-            $res= $selcom->fundTransfer($payload['transid'],$payload['reference'],$payload['utilityref'], $msisdn,$payload['amount']);
-            //$result=$res;
-          
-            $respArray = $this->_getResponse('transferFunds',$res['result'], $payload['transid'], $this->reference);
-        }
+            $res= $selcom->fundTransfer($payload['transid'],$this->reference,$utilityref, $msisdn,$payload['amount']);
+            if ($res['resultcode'] !== '200')
+                return json_encode($this->_getError( __FUNCTION__,$res['result'],$res['resultcode'],$data->transid, $this->reference));
+            else
+                $respArray = $this->_getResponse(__FUNCTION__,$res['result'], $payload['transid'], $this->reference);        }
         catch (Exception $e) {
-
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='transferFunds';
-            $result['result']=$e->getMessage();
-            $result['resultcode'] = '067';
-            $message['data']=$result;
-
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
+            
             $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'067',$data->transid, $this->reference);
 
         }
        //die(print_r($respArray));
         return (json_encode($respArray));
+    }
+    public function transferFundsBank($data)   {
+        try{
+            $result=null;
+            //check for required fields eg transid return accountprofile info of this transid
+            $err = Validate::transferFunds($data);
+            if (!empty($err))
+                throw new Exception($err);
+               
+            $payload = (array)$data;
+
+            $msisdn = self::_get_msisdn($payload['accountNo']);
+            $sender = self::_getProfile($payload['accountNo']);
+            //check sender card status active state         
+           
+            
+            //check receiver card status active state
+            /* check bankHolderName param to transfer to palmpayto bank
+            */
+            if (!isset($payload['accountHolderName']) || empty($payload['accountHolderName'])){
+                    
+                $err="missing parameter accountHolderName ";                    
+                throw new Exception($err);
+            }
+            else  if (!isset($payload['bankName']) || empty($payload['bankName'])){
+                    
+                $err="missing parameter bankName ";                    
+                throw new Exception($err);
+            }
+           
+            else
+                $flag = 'bank';
+
+           $utilityref  = $payload['utilityref'];
+            $dummy = array("accountNo" =>$payload['accountNo'],"balance" => $sender['balance'],"amount" => $payload['amount'],"dated" => date('Y-m-d H:i:s'),"description" => "Successfully sent funds to ".$payload['accountHolderName'].' at the Bank: '.$payload['bankName']);
+               $arr = array("resultcode" =>"200","result"  => $dummy);
+               $msg = array("status" => "SUCCESS","method" => __FUNCTION__,"data" => $arr);
+               $res = array("transid" => $payload['transid'],"reference" =>$this->reference, "responseCode" =>"200","Message" => $msg );
+               //$res= $selcom->fundTransfer($payload['transid'],$payload['reference'],$payload['utilityref'], $msisdn,$payload['amount']);
+
+         
+            $respArray = $this->_getResponse( __FUNCTION__,$dummy, $payload['transid'], $this->reference);
+        }
+        catch (Exception $e) {
+
+            
+            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'067',$data->transid, $this->reference);
+
+        }
+       //die(print_r($respArray));
+        return (json_encode($respArray));
+    }
+   
+    public function fundTransferWallet($data){        
+    try{
+        //check for required fields eg transid return accountprofile info of this transid
+        $err = Validate::payUtility($data);
+        if (!empty($err))
+            throw new Exception($err);
+        $payload = (array)$data;        
+      
+
+        $payload = (array)$data;
+        $payload['reference']=$this->reference;
+        
+        $msisdn = $this->_get_msisdn($payload['accountNo']); //agent has msidn number not accountNo
+        
+        $profile = $this->_getProfile( $payload['accountNo']);
+        if (empty($profile)){
+            $err="This Account does not exist";
+            throw new Exception($err);
+        }
+           
+        //$msisdn_acct = $profile[0]['msisdn'];
+        $name =  $profile['firstName'].' '. $profile['lastName'];
+        $utilitycode = $payload['utilitycode'];
+        $utilityref = $payload['utilityref'];
+        $amount = $payload['amount'];
+        $transid = $payload['transid'];
+       
+
+        $selcom = new DbHandler();
+       $res=$payload;
+        unset($res['reference']);
+
+        $respArray = $this->_getResponse(__FUNCTION__,$res, $payload['transid'], $this->reference);
+
+    }catch (Exception $e) {
+        $respArray = $this->_getError(__FUNCTION__,$e->getMessage(),'073',$data->transid, $this->reference);
+    }
+    return json_encode($respArray);
     }
     public function checkBalance($data)   {
         try{
@@ -786,7 +884,7 @@ function _mask ( $str, $start = 0, $length = null ) {
             $payload['reference']=$this->reference;
             if (isset($payload['accountNo'])){
                 $account = $payload['accountNo'];
-                $msisdn = $this->get_msisdn($account);
+                $msisdn = $this->_get_msisdn($account);
             }                
             else 
                 $msisdn = $payload['msisdn'];
@@ -803,14 +901,7 @@ function _mask ( $str, $start = 0, $length = null ) {
         }
         catch (Exception $e) {
 
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='checkBalance';//.$e->getMessage()." : ".$sql;
-            $result['resultcode'] ='068';
-            $result['result']=$e->getMessage();
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
+             
             $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'068',$data->transid, $this->reference);
 
         }
@@ -824,14 +915,14 @@ function _mask ( $str, $start = 0, $length = null ) {
                 throw new Exception($err);
             $payload = (array)$data;
 
-            $payload['reference']=$this->reference;
+            //$payload['reference']=$this->reference;
             $account = $payload['accountNo'];
-            $msisdn = $this->get_msisdn($account);
+            $msisdn = $this->_get_msisdn($account);
              
             $days = isset($payload['days'])?$payload['days']:3;
             $start = isset($payload['start'])?$payload['start']:'';
             $end = isset($payload['end'])?$payload['end']:'';
-            $date = isset($payload['date'])?$payload['date']:3;
+            $date = isset($payload['date'])?$payload['date']:'';
            
             $payload['fulltimestamp'] = date('Y-m-d H:i:s');
             $payload['method'] = 'getStatement';
@@ -840,8 +931,10 @@ function _mask ( $str, $start = 0, $length = null ) {
                 $end = date('Y-m-d', strtotime($end . ' +1 day'));             
                 $res = $selcom->statementEnquiryRange($msisdn, $start, $end);
             }
-             else if($date !== '' ) 
+             else if($date !== '' ) {
                 $res = $selcom->statementEnquiryDay($msisdn,date('Ymd',strtotime($date)));
+               
+             }
              else 
                 $res = $selcom->statementEnquiry($msisdn,$days); 
               
@@ -850,14 +943,7 @@ function _mask ( $str, $start = 0, $length = null ) {
         }
         catch (Exception $e) {
 
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='getStatement';//.$e->getMessage()." : ";
-            $result['resultcode'] ='069';
-            $result['result']=$e->getMessage();
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
+            
             $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'069',$data->transid, $this->reference);
 
         }
@@ -878,18 +964,16 @@ function _mask ( $str, $start = 0, $length = null ) {
             
             $status = isset($payload['statustxt']) && strtolower($payload['statustxt']) === 'open'?'1':'0';
             
-            //unset( $payload['transid']);
-
-
-            $sql = "UPDATE card SET status='".$status."' where accountNo='".$accountNo."'; ";
-            $sql2 =" UPDATE accountprofile SET status='".$status."' where accountNo='".$accountNo."'";
+            //update accountprofile and card, both status and active variables
+            $sql = "UPDATE card SET status='".$status."', active='".$status."' where accountNo='".$accountNo."'; ";
+            $sql2 =" UPDATE accountprofile SET status='".$status."', active='".$status."' where accountNo='".$accountNo."'";
 
             $stmt = $this->conn->query($sql);             
 
             $stmt2 = $this->conn->query($sql2);
             
 
-            $sql3 ='SELECT firstName, lastName, tier,customerNo,accountNo, msisdn,  REPLACE(REPLACE(status,0,\'close\'),1,\'open\') AS statustxt,  lastupdated from accountprofile  where accountNo="'.$accountNo.'"';
+            $sql3 ='SELECT firstName, lastName, tier, accountNo, msisdn,  REPLACE(REPLACE(status,0,\'close\'),1,\'open\') AS statustxt, /*REPLACE(REPLACE(active,0,\'close\'),1,\'open\') AS activetxt,*/ lastupdated from accountprofile  where accountNo="'.$accountNo.'"';
             $stmt3 = $this->conn->query($sql3);
 
             $res = $stmt3->fetch(PDO::FETCH_ASSOC);
@@ -898,15 +982,8 @@ function _mask ( $str, $start = 0, $length = null ) {
 
         }catch (Exception $e) {
 
-           /* $message = array();
-            $message['status']="ERROR";
-            $message['method']='changeStatus';//.$e->getMessage()." : ".$sql;
-            $result['resultcode'] ='071';
-                $result['result']=$e->getMessage();
-                $message['data']=$result;
-                $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-                */
-        $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'071',$data->transid, $this->reference);
+          
+        $respArray = $this->_getError('changeStatus',$e->getMessage(),'071',$data->transid, $this->reference);
 
         }
         
@@ -919,7 +996,7 @@ function _mask ( $str, $start = 0, $length = null ) {
     public function addCash($data){
         try{
             //check for required fields eg transid return accountprofile info of this transid
-            $err = Validate::cashin($data);
+            $err = Validate::addCash($data);
             
             if (!empty($err))
                 throw new Exception($err);
@@ -927,33 +1004,35 @@ function _mask ( $str, $start = 0, $length = null ) {
 
 
             $payload = (array)$data;
-            $payload['reference']=$this->reference;
-            $customer = $this->_getAccountNo($payload['msisdn']); //agent has msidn number not accountNo
+            //$payload['reference']=$this->reference;
+            $accountNo = $payload['accountNo'];
+           
 
-            $profile = json_decode($this->_getProfile($customer), true);
+            $profile = $this->_getProfile($accountNo);
            /* if(!$profile)
                 die('here '.print_r($profile));*/
-            $name =  $profile[0]['firstName'].' '. $profile[0]['lastName'];
+            //$name =  $profile['firstName'].' '. $profile['lastName'];
             $amount = $payload['amount'];
-            $payload['firstname']= $profile[0]['firstName'];
-            $payload['lastname']= $profile[0]['lastName'];
+            $msisdn = $profile['msisdn'];
+
+            $utilitycode = 'SPCASHIN'; //$payload['utilitycode'];
             
             $selcom = new DbHandler();
-            //$result = $selcom->utilityPayment($transid,'SPCASHIN',$payload['msisdn'],$payload['msisdn'],$amount,$payload['reference']);
-            $res[0]=$payload;
-            $respArray = $this->_getResponse('addCash',$res, $payload['transid'], $this->reference);
+            /*
+            * FOR SIMULATOR DO P2P BUT ON PRODUCTION YOU DONT HAVE TO DO ANYTHING, THE CARD BALANCE WILL GET UPDATED SPCASHIN
+            *
+            */
+            $res = $selcom->utilityPayment($payload['transid'],'P2P',$msisdn,$msisdn,$amount,$this->reference);
+            if ($res['resultcode'] !== '000')
+                return json_encode($this->_getError( __FUNCTION__,$res['result'],$res['resultcode'],$data->transid, $this->reference));
+            else
+                $respArray = $this->_getResponse(__FUNCTION__,$res['result'], $payload['transid'], $this->reference);
+
 
         }catch (Exception $e) {
 
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='addCash';//.$e->getMessage();
-            $result['resultcode'] ='072';
-                $result['result']=$e->getMessage();
-                $message['data']=$result;
-                $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-                */
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'072',$data->transid, $this->reference);
+            
+            $respArray = $this->_getError('addCash',$e->getMessage(),'072',$data->transid, $this->reference);
         }
         return json_encode($respArray);
     }
@@ -961,18 +1040,19 @@ function _mask ( $str, $start = 0, $length = null ) {
      * selcom->payUtility is offline, make sure its ready before production
      * * */
     public function payUtility($data){
+        
         try{
             //check for required fields eg transid return accountprofile info of this transid
             $err = Validate::payUtility($data);
             if (!empty($err))
                 throw new Exception($err);
-            $payload = (array)$data;
-           
+            $payload = (array)$data;        
+          
 
             $payload = (array)$data;
             $payload['reference']=$this->reference;
             
-            $msisdn = $this->get_msisdn($payload['accountNo']); //agent has msidn number not accountNo
+            $msisdn = $this->_get_msisdn($payload['accountNo']); //agent has msidn number not accountNo
             
             $profile = $this->_getProfile( $payload['accountNo']);
             if (empty($profile)){
@@ -986,106 +1066,80 @@ function _mask ( $str, $start = 0, $length = null ) {
             $utilityref = $payload['utilityref'];
             $amount = $payload['amount'];
             $transid = $payload['transid'];
-            //$msisdn = $payload['msisdn'];
-
-            //$payload['accountNo']=$customer;
-            //unset( $payload['transid']);
            
-
 
             $selcom = new DbHandler();
 //$result = $selcom->utilityPayment($transid,$utilitycode,$utilityref,$msisdn,$amount,$payload['reference']);
-            $res[0]=$payload;
+            $res=$payload;
 
             $respArray = $this->_getResponse('payUtility',$res, $payload['transid'], $this->reference);
 
         }catch (Exception $e) {
 
-            /*$message = array();
-            $message['status']="ERROR";
-            $result['resultcode'] ='073';
-            $result['result']=$e->getMessage();
-            $message['data']=$result;
-            $result['resultcode'] ='501';
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'073',$data->transid, $this->reference);
+           
+            $respArray = $this->_getError('payUtility',$e->getMessage(),'073',$data->transid, $this->reference);
         }
         return json_encode($respArray);
     }
-    public function freezeAccount($data)   {
+    public function freezeFunds($data)   {
         try{
             //check for required fields eg transid return accountprofile info of this transid
+           
+            $err = Validate::freezeFunds($data);
+            if (!empty($err))
+                throw new Exception($err);
+               
+            $payload = (array)$data;
+            $ref=$this->reference;
+            $accountNo = $payload['accountNo'];        
+            $msisdn = self::_get_msisdn($accountNo);
+            $amount = $payload['amount'];
+            $transid = $payload['transid'];
+           // die($transid.' '.$ref.' '.$accountNo.' '.$msisdn.' '.$amount);
+            //create transaction to debit card of the amount added to suspense
+            $selcom = new DbHandler();
+            $res = $selcom->freezeFunds($transid,$ref,$accountNo, $amount);
+            die(print_r($res));
+            if ($res['resultcode'] !== '200')
+                return json_encode($this->_getError( __FUNCTION__,$res['result'],$res['resultcode'],$data->transid, $this->reference));
+            else
+                $respArray = $this->_getResponse(__FUNCTION__,$res['result'], $payload['transid'], $this->reference);
+    }
+        catch (Exception $e) {
 
-            $err = Validate::reserveAccount($data);
+           
+            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'074',$data->transid, $this->reference);
+        }
+        return (json_encode($respArray));
+    }
+    public function unFreezeFunds($data)   {
+        try{
+            //check if the reference is the same as on in the transaction
+
+            $err = Validate::unFreezeFunds($data);
             if (!empty($err))
                 throw new Exception($err);
 
             $payload = (array)$data;
             $ref=$this->reference;
-            $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
-            $customer = $this->_getAccountNo($account);
-            $amount = $payload['amount'];
-
-            $transid = $payload['transid'];
-            $msisdn = $payload['msisdn'];
-            $utilityref = $payload['msisdn'];//same account
-
-
-            //create transaction to debit card of the amount added to suspense
-            $selcom = new DbHandler();
-            $res[0] = $selcom->reserveAccount($transid,$ref,$msisdn,$amount);
-
-            $respArray = $this->_getResponse('reserveAccount',$res, $payload['transid'], $this->reference);
-        }
-        catch (Exception $e) {
-
-           /* $message = array();
-            $message['status']="ERROR";
-            $message['method']='freezeAccount';//.$e->getMessage()." : ";
-            $result['resultcode'] ='074';
-            $result['result']=$e->getMessage();
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'074',$data->transid, $this->reference);
-        }
-        return (json_encode($respArray));
-    }
-    public function unFreezeAccount($data)   {
-        try{
-            //check if the reference is the same as on in the transaction
-
-            $err = Validate::unReserveAccount($data);
-            if (!empty($err))
-
-
-            $payload = (array)$data;
-            $ref=$this->reference;
-            $account = isset($payload['customerNo'])?$payload['customerNo']:$payload['msisdn'];
-            $customer = $this->_getAccountNo($account);
-            $amount = $payload['amount'];
-            $transid = $payload['transid'];
-            $msisdn = $payload['msisdn'];
-            $utilityref = $payload['msisdn'];//same account
+            $accountNo = $payload['accountNo'];
+            //$customer = $this->_getAccountNo($account);
+            $payload['reference'] = $this->reference;
+            $payload['msisdn'] = self::_get_msisdn($accountNo);
+            //$utilityref = $payload['utilityref'];//previous reference
+            //$transref = $payload['transref'];//previous reference
 
 
             //create transaction to debit card of the amount added to suspense
             $selcom = new DbHandler();
-            $res[0] = $selcom->unReserveAccount($transid,$ref,$payload['reference'],$msisdn,$amount);
-            $respArray = $this->_getResponse('unReserveAccount',$res, $payload['transid'], $this->reference);
+            $res = $selcom->unFreezeFunds($payload);
+             
+           
+            $respArray = $this->_getResponse(__FUNCTION__,$res['result'], $payload['transid'], $this->reference);
         }
         catch (Exception $e) {
 
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='unReserveAccount';//.$e." : ";//.$sql;
-            $result['resultcode'] ='081';
-                $result['result']=$e->getMessage();
-                $message['data']=$result;
-                $respArray = ['transid'=>$data->transid,'reference'=>$ref,'responseCode' => 501, "Message"=>($message)];
-                */
-        $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'081',$data->transid, $this->reference);
+        $respArray = $this->_getError(__FUNCTION__,$e->getMessage(),'081',$data->transid, $this->reference);
         }
         return (json_encode($respArray));
     }
@@ -1170,25 +1224,17 @@ function _mask ( $str, $start = 0, $length = null ) {
         }
         catch(Exception $e) {
 
-            /*$message = array();
-            $message['status']="ERROR";
-            $message['method']='requestCard' ;
-            $result['resultcode'] ='076';
-            $result['result']=$e->getMessage().$sql;
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(), '079',$data->transid, $this->reference);
+            $respArray = $this->_getError('requestCard',$e->getMessage(), '079',$data->transid, $this->reference);
             
         }
         return (json_encode($respArray));
 
     }
-    public function search($data){
+    public function search($data, $except){
        
         
         if (!isset($data->transref))
-            return  json_encode($this->_getError( __FUNCTION__,'transref parameter missing', 077,$data->transid, $this->reference));
+            return  json_encode($this->_getError('transref','transref parameter missing', 077,$data->transid, $this->reference));
 
             $searchthis =$data->transref;
         //$searchthis ='"transid":"'.$data->transref.'"';
@@ -1202,7 +1248,7 @@ function _mask ( $str, $start = 0, $length = null ) {
             {
                 $buffer = fgets($handle);
                 
-                if(strpos($buffer, $searchthis) !== FALSE)
+                if(strpos($buffer, $searchthis) !== FALSE && !(strpos($buffer, $except)))
                 //print_r($buffer);
                     $matches[] = ($buffer);
                     
@@ -1211,8 +1257,13 @@ function _mask ( $str, $start = 0, $length = null ) {
         }
 
         //show results:
-        print_r($matches);
-        //return ($matches);
+     foreach ($matches as $match){
+        $pos = strpos($match, '{');
+        $obj = json_decode (substr($match,$pos,strlen($match)));
+        print_r(json_encode($obj));
+     }
+       
+       
 
     }
     public function cashout($data)   {
@@ -1226,27 +1277,21 @@ function _mask ( $str, $start = 0, $length = null ) {
                 
             $payload = (array)$data;
             
-            $res = array();
-            $res['status']="SUCCESS";
-            $res['method']='cashout'; 
+           /* $result = array();
+            $result['status']="SUCCESS";
+            $result['method']='cashout'; 
             $result['resultcode'] ='082';
-            $result['result']=$data->message;//'cashout requested';
-            $res['data']=$result;
+            */
+            $res=$data->message;//'cashout requested';
+            //$res['data']=$result;
             
             
-            $respArray = $this->_getResponse('nameLookup',$res, $payload['transid'], $this->reference);
+            $respArray = $this->_getResponse(__FUNCTION__,$res, $payload['transid'], $this->reference);
         }
         catch (Exception $e) {
 
-           /* $message = array();
-            $message['status']="ERROR";
-            $message['method']='nameLookup';//.$e->getMessage()." : ";//.$sql;
-            $result['resultcode'] ='065';
-            $result['result']=$e->getMessage().' : '.$sql;
-            $message['data']=$result;
-            $respArray = ['transid'=>$data->transid,'reference'=>$this->reference,'responseCode' => 501, "Message"=>($message)];
-            */
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'082',$data->transid, $this->reference);
+           
+            $respArray = $this->_getError(__FUNCTION__,$e->getMessage(),'082',$data->transid, $this->reference);
 
             
         }
@@ -1277,13 +1322,10 @@ function _mask ( $str, $start = 0, $length = null ) {
             
             $msisdn = $profile['msisdn'];
            
-            $res = array();
-            $res['status']="SUCCESS";
-            $res['method']='reverseTransaction'; 
-            $result['resultcode'] ='083';
-            $result['result']='Your request is being processed. You will receive a notificaton when the transaction has been completed';
-            $res['data']=$result;
-
+            
+            $res='Your request is being processed. You will receive a notificaton when the transaction has been completed';
+            
+            $respArray = $this->_getResponse(__FUNCTION__,$res, $payload['transid'], $this->reference);
 
            /* send notification to selcom*/
             $to = "salma@selcom.net";
@@ -1301,7 +1343,7 @@ function _mask ( $str, $start = 0, $length = null ) {
         }
         catch (Exception $e) {
            
-            $respArray = $this->_getError( __FUNCTION__,$e->getMessage(),'083',$data->transid, $this->reference);
+            $respArray = $this->_getError('reverseTransaction',$e->getMessage(),'083',$data->transid, $this->reference);
 
             
         }
@@ -1398,6 +1440,40 @@ function _mask ( $str, $start = 0, $length = null ) {
         catch (Exception $e) {
             
             $respArray = $this->_getError('redeemVoucher',$e->getMessage(),'086',$data->transid, $this->reference);
+        }
+       
+        return (json_encode($respArray));
+    }
+    public function pullFromCard($data)   {
+        //check for required fields eg transid return accountprofile info of this transid
+        $sql=null;
+        try{
+             $err = Validate::pullFromCard($data);
+           
+            if (!empty($err))
+                throw new Exception($err);
+
+        $payload = (array)$data;
+        $fulltimestamp = date('Y-m-d H:i:s'); 
+        $accountNo = $payload['accountNo'];
+        $profile = self::_getProfile($payload['accountNo']);
+        $amount = $payload['amount'];
+        $balance = (int)$profile['balance']+(int)$payload['amount'];;
+        if ($card = self::_getLinkedCard($payload['accountNo'], $payload['cardHolderName'], $payload['cardNumber'], $payload['cardType'],$payload['exp'], $payload['cvv']))
+        
+            $res = 'Withdrawal amount of : '.$amount.' from card to your PALMPAY, balance of: '.$balance.'';
+        else{
+            $err ='This card does not exist';
+            throw new Exception($err);
+        }
+    
+        
+        $respArray = $this->_getResponse(__Function__,$res, $payload['transid'], $this->reference);
+              
+        }
+        catch (Exception $e) {
+            
+            $respArray = $this->_getError(__Function__,$e->getMessage(),'089',$data->transid, $this->reference);
         }
        
         return (json_encode($respArray));
